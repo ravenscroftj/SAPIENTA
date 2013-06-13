@@ -6,7 +6,8 @@ setup(
     packages = find_packages(),
 
     #install requirements
-    install_requires = ['text-sentence>=0.14'],
+    install_requires = ['Flask>0.9',
+        'text-sentence>=0.14'],
 
     author="James Ravenscroft",
     author_email = "ravenscroft@papro.org.uk",
