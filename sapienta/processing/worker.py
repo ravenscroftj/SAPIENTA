@@ -12,9 +12,12 @@ import cPickle
 import signal
 import logging
 import xmlrpclib
+import threading
 
-from multiprocessing import Pool, Queue
+from multiprocessing import Pool, Queue, Process
 from Queue import Empty
+
+from optparse import OptionParser
 
 from sapienta.tools.converter import PDFXConverter
 from sapienta.tools.annotate import Annotator
@@ -39,6 +42,10 @@ class WorkerClient:
         else:
             self.remote_addr = (config['COORD_ADDRESS'], config['COORD_PORT'])
         self.processes = processes
+
+        if self.processes != None:
+            self.processes = int(self.processes) 
+
         self.logger = logging.getLogger(__name__)
         self.evt = evt
 
@@ -249,3 +256,51 @@ def process_paper( incoming ):
     logger.info("Took %d seconds to process paper",tdiff) 
 
     return r, tdiff
+
+
+
+#--------------------------------------------------------------------------
+
+def main():
+
+    usage = "usage: %prog [options] <server> <port>"
+
+    parser = OptionParser(usage=usage)
+
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
+        help="If set, run the client in verbose mode")
+
+    parser.add_option("-p", "--processes", action="store", dest="processes",
+        default=None, help="Number of threads to run, defaults to number of cores on your CPU")
+
+
+    (options, args) = parser.parse_args()
+
+
+    if(options.verbose):
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+    if(len(args) < 2):
+        parser.print_help()
+        sys.exit(1)
+    else:
+        server   = args[0]
+        port     = args[1]
+
+    pevt = threading.Event()
+
+    try:
+        w = WorkerClient(pevt, (server,port), processes = options.processes)
+        p = Process(target=lambda:w.run())
+        p.start()
+        while 1:
+            raw_input()
+    except KeyboardInterrupt:
+        pevt.set()
+
+#--------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    main()
