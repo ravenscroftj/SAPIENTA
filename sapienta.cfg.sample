@@ -1,0 +1,12 @@
+#Configuration file for sapienta
+
+SAPIENTA_ANNOTATE_METHOD = "PERL" #PERL, PYTHON or REMOTE. If you don't know which is applicable, stick with remote ;)
+
+#sapienta processor values
+SAPIENTA_PERL_DIR = "/data/sapienta/Project/sidePrograms/Code_for_svn/perl_code"
+SAPIENTA_RESULT_DIR = "/data/sapienta/queue/processing/output/All/Test/Feature/"
+
+#preprocessor server values
+OUTPUT_DIRECTORY = "/tmp/sapienta"
+COORD_ADDRESS = "localhost"
+COORD_PORT    = 1234

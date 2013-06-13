@@ -12,7 +12,8 @@ setup(
             'text-sentence>=0.14'],
 
     entry_points = {"console_scripts" : [
-        'pdfxconv = sapienta.tools.pdfxconv:main'
+        'pdfxconv = sapienta.tools.pdfxconv:main',
+        'sapiworker = sapienta.processing.worker:main'
         ]},
 
     author="James Ravenscroft",
