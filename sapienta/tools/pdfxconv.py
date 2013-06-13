@@ -8,10 +8,9 @@ import os
 import logging
 
 from optparse import OptionParser
-from converter import PDFXConverter
-#annotator is an alias for the 'recommended' annotator at this time
-from annotate import Annotator
-from split import SentenceSplitter
+from sapienta.tools.converter import PDFXConverter
+from sapienta.tools.annotate import Annotator
+from sapienta.tools.split import SentenceSplitter
 
 
 def main():
@@ -73,6 +72,7 @@ def main():
             logging.info("Splitting sentences in %s", infile)
             
             s = SentenceSplitter()
+            outfile = name + "_split" + ext
             s.split(split_infile, outfile)
 
             anno_infile = outfile
@@ -81,7 +81,6 @@ def main():
             a = Annotator()
 
             #build annotated filename
-            name,ext = os.path.splitext(anno_infile)
             outfile = name + "_annotated" + ext
             logging.info("Annotating file and saving to %s", outfile)
             a.annotate( anno_infile, outfile )

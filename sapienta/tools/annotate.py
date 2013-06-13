@@ -10,22 +10,15 @@ import codecs
 import subprocess
 import tempfile
 import logging
+
 from urllib import urlencode
-
-#from sapienta.docparser import SciXML
-#from sapienta.crf import Tagger
-
-from partridge.config import config
-
 from progressbar import ProgressBar
 from xml.dom import minidom
-
-from partridge.config import config
-
 from curlutil import CURLUploader
-
 from collections import Counter
+from sapienta import app
 
+config = app.config
 
 
 
@@ -99,7 +92,7 @@ class BaseAnnotator(object):
 
 
 
-MODEL_PATH = str(os.path.join(config['MODELS_DIR'], "a.model"))
+#MODEL_PATH = str(os.path.join(config['MODELS_DIR'], "a.model"))
 class LocalPythonAnnotator:
     #------------------------------------------------------------------------- 
     def annotate(self, filename, outfilename):
@@ -148,10 +141,10 @@ class LocalPythonAnnotator:
 class LocalPerlAnnotator(BaseAnnotator):
     """Uses Perl version of sapienta to annotate the given paper"""
 
-    def __init__(self, perldir, resultdir):
+    def __init__(self):
 
-        self.perldir = perldir
-        self.resultdir = resultdir
+        self.perldir = config['SAPIENTA_PERL_DIR']
+        self.resultdir = config['SAPIENTA_RESULT_DIR']
 
 
     def annotate(self,infile,outfile):
