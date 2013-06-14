@@ -22,9 +22,9 @@
           <a class="brand" href="#">SAPIENTA</a>
           <div class="nav-collapse collapse">
             <ul class="nav">
-              <li class="active"><a href="#">Home</a></li>
-              <li><a href="#about">Submit Paper</a></li>
-              <li><a href="/status">Service Status</a></li>
+                <li><a href="{{ url_for('.index') }}">Home</a></li>
+                <li><a href="{{url_for('.upload_form')}}">Submit Paper</a></li>
+              <li><a href="{{ url_for('.service_status') }}">Service Status</a></li>
               <li><a href="#about">API</a></li>
               <li><a href="#contact">Contact</a></li>
             </ul>

@@ -107,11 +107,37 @@ class CoordinatorServerHandler:
             else:
                 self.logger.warn("No such worker with ID %d", workerid)
         self.dblock.release()
+        return r != None
 
 #------------------------------------------------------------------------------------------------
 
     def get_stats(self):
         """Return status information (used by web frontend)"""
+
+        self.dblock.acquire()
+
+        curr = self.dbconn.cursor()
+
+        stats = {}
+
+        with self.dbconn:
+            curr.execute("SELECT COUNT(*) as count FROM workers")
+            
+            stats['workers'] = curr.fetchone()['count']
+
+            curr.execute("SELECT COUNT(*) as count FROM slots")
+
+            stats['slots'] = curr.fetchone()['count']
+
+            curr.execute("SELECT COUNT(*) as count FROM jobs WHERE status='PENDING'")
+            stats['pending'] = curr.fetchone()['count']
+
+            curr.execute("SELECT COUNT(*) as count FROM jobs WHERE status='WORKING'")
+            stats['working'] = curr.fetchone()['count']
+
+        self.dblock.release()
+
+        return stats
 
 
 #------------------------------------------------------------------------------------------------
@@ -273,7 +299,7 @@ class Coordinator:
         """Set up XMLRPC server"""
         self.logger.info("Establishing job server")
         self.server = SimpleXMLRPCServer(self.addr, 
-                logRequests=True,allow_none=True)
+                logRequests=False,allow_none=True)
 
         self.server.register_instance(CoordinatorServerHandler(self.outdir))
 

@@ -1,0 +1,29 @@
+{% extends "main.html" %}
+{%block title%}Job Status{%endblock%}
+{%block content%}
+
+{% if (job.status == "WORKING") or (job.status == "PENDING") %}
+
+<p>The job {{job.filename}} (JOBID {{job.jobid}}} is currently being annotated. Please wait... </p>
+
+<img src="{{url_for('static', filename='loader.gif')}}" alt="Working..."/>
+
+
+<p>This page will refresh in 10 seconds...</p>
+<script type="text/JavaScript">
+<!--
+	setTimeout("location.reload(true);", 10000);
+//   -->
+</script>
+
+{%elif job.status == "DONE"%}
+
+<p>Job {{job.jobid}} has been completed and is now ready to be downloaded</p>
+
+
+<a href="{{url_for('.get_paper', jobid=job.jobid)}}" class="btn btn-primary btn-large">
+<i class="icon-arrow-down icon-white"></i> Download Paper
+</a>
+
+{%endif%}
+{%endblock%}

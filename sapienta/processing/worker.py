@@ -102,7 +102,7 @@ class WorkerClient:
                 logRequests=False,allow_none=True)
 
         workerhandler = WorkerServerHandler(p, self.remote_addr)
-        self.server.register_instance(workerhandler)
+        worker_id = self.server.register_instance(workerhandler)
 
         self.logger.info("Starting worker with %d threads", len(p._pool))
 
@@ -112,6 +112,8 @@ class WorkerClient:
             self.server.serve_forever()
         except KeyboardInterrupt:
             self.logger.warn("Interrupted by keyboard...")
+
+        qm.unregister_worker(worker_id)
 
         #now kill off the processes
         p.close()
@@ -245,7 +247,7 @@ def process_paper( incoming, server ):
             with open(resultfile,'rb') as f:
                 data = f.read()
 
-            r = jobid, filename, data
+            r = jobid, os.path.basename(resultfile), data
 
         except Exception as e:
 
