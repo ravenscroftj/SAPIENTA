@@ -14,8 +14,8 @@ import logging
 import xmlrpclib
 import threading
 
-from multiprocessing import Pool, Queue, Process
-from Queue import Empty
+from multiprocessing import Pool, Process
+from SimpleXMLRPCServer import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler
 
 from optparse import OptionParser
 
@@ -27,20 +27,58 @@ from sapienta import app
 
 config = app.config
 
+
+def test(*args):
+   print args
+
 #-------------------------------------------------------------------------------
 
+class WorkerServerHandler:
+    """XMLRPC methods for the worker"""
+
+    def __init__(self, pool, coord):
+        self.pool = pool
+        self.coord = coord
+
+#------------------------------------------------------------------------------------------------
+            
+    def _dispatch(self, method, params):
+         try: 
+             return getattr(self, method)(*params)
+         except:
+             import traceback
+             traceback.print_exc()
+             raise
+
+#------------------------------------------------------------------------------------------------
+    def do_job(self, jobblob):
+        job = cPickle.loads(zlib.decompress(jobblob.data))
+        coord = self.coord
+        #process_paper(job,coord)
+        pool = self.pool
+        self.pool.apply_async(process_paper, [job,self.coord])
+        return 1
+        
 
 def init_worker():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 class WorkerClient:
     """Main class that deals with the Coordinator module"""
-    def __init__(self, evt, coord_addr=None, processes=None):
+
+    def __init__(self, evt, coord_addr=None, listen_addr=None, processes=None):
         """Set up a worker object """
         if coord_addr != None:
             self.remote_addr = coord_addr
         else:
             self.remote_addr = (config['COORD_ADDRESS'], config['COORD_PORT'])
+
+        if listen_addr != None:
+            self.listen_addr = listen_addr
+        else:
+            self.listen_addr = (config['WORKER_ADDRESS'], config['WORKER_PORT'])
+
+
         self.processes = processes
 
         if self.processes != None:
@@ -60,38 +98,20 @@ class WorkerClient:
 
         qm = xmlrpclib.ServerProxy(uri)
 
+        self.server = SimpleXMLRPCServer(self.listen_addr, 
+                logRequests=False,allow_none=True)
+
+        workerhandler = WorkerServerHandler(p, self.remote_addr)
+        self.server.register_instance(workerhandler)
+
         self.logger.info("Starting worker with %d threads", len(p._pool))
 
-        results = Queue()
+        qm.register_worker(self.listen_addr[0], self.listen_addr[1], len(p._pool))
 
-        while not self.evt.is_set():
-
-            #process and return any results
-            while not results.empty():
-                self.logger.debug("Get an item off the queue")
-                try:
-                    r = results.get(block=False)
-                    result_data = zlib.compress(cPickle.dumps(r))
-                    qm.return_result(xmlrpclib.Binary(result_data))
-                except Empty:
-                    self.logger.debug("Couldn't get an item off the results queue, retry")
-                    continue;
-
-
-            try:
-                self.logger.debug("Trying to get something to do...")
-                
-                job = cPickle.loads(zlib.decompress(qm.get_work().data))
-
-                if(job == None):
-                    self.logger.debug("Nothing to do, sleeping...")
-                    time.sleep(1)
-                else:
-                    p.apply_async(process_paper, [job], callback=lambda x: results.put(x))
-             
-            except KeyboardInterrupt as e:
-                self.logger.warn("Interrupted client")
-                break
+        try:
+            self.server.serve_forever()
+        except KeyboardInterrupt:
+            self.logger.warn("Interrupted by keyboard...")
 
         #now kill off the processes
         p.close()
@@ -193,70 +213,82 @@ class PreprocessingException(Exception):
 #---------------------------------------------------------------------
 
 
-def process_paper( incoming ):
+def process_paper( incoming, server ):
 
+    import traceback
     import threading
 
-    tstart = time.time()
-
-    jobid, filename, data = incoming
-
-    workdir = tempfile.mkdtemp()
-    
-    logger = logging.getLogger(__name__ + ":" + threading.currentThread().name
-)
-
-    w = PaperWorker(logger,workdir)
-
-    name = os.path.join(workdir,os.path.basename(filename))
-
-    with open(name, 'wb') as f:
-        f.write(data)
-
-    r = None
-
     try:
-        resultfile = w.process(name)
 
-        with open(resultfile,'rb') as f:
-            data = f.read()
+        tstart = time.time()
 
-        r = jobid, filename, data
+        jobid, filename, data = incoming
 
-    except Exception as e:
-
-        #get exception information and dump to user
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        logger.error("Error processing paper %s: %s",
-            filename,e)
+        workdir = tempfile.mkdtemp()
         
-        for line in traceback.format_tb(exc_tb):
-            logger.error(line)
+        logger = logging.getLogger(__name__ + ":" + threading.currentThread().name
+    )
+        logger.info("Starting worker...")
 
-        p = PreprocessingException(e)
-        p.traceback = traceback.format_exc()
-        p.jobid = jobid
-        r = p
+        w = PaperWorker(logger,workdir)
 
-    finally:
-        logger.info("Cleaning up work directory %s", workdir)
-        for root,dirs,files in os.walk(workdir):
-            for file in files:
-                os.unlink(os.path.join(root,file))
+        name = os.path.join(workdir,os.path.basename(filename))
 
-            for dir in dirs:
-                os.rmdir(os.path.join(root,dir))
+        with open(name, 'wb') as f:
+            f.write(data)
 
-        os.rmdir(workdir)
+        r = None
 
-    tend = time.time()
+        try:
+            resultfile = w.process(name)
 
-    tdiff = tend - tstart
+            with open(resultfile,'rb') as f:
+                data = f.read()
 
-    logger.info("Took %d seconds to process paper",tdiff) 
+            r = jobid, filename, data
 
-    return r, tdiff
+        except Exception as e:
 
+            #get exception information and dump to user
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            logger.error("Error processing paper %s: %s",
+                filename,e)
+            
+            for line in traceback.format_tb(exc_tb):
+                logger.error(line)
+
+            p = PreprocessingException(e)
+            p.traceback = traceback.format_exc()
+            p.jobid = jobid
+            r = p
+
+        finally:
+            logger.info("Cleaning up work directory %s", workdir)
+            for root,dirs,files in os.walk(workdir):
+                for file in files:
+                    os.unlink(os.path.join(root,file))
+
+                for dir in dirs:
+                    os.rmdir(os.path.join(root,dir))
+
+            os.rmdir(workdir)
+
+        tend = time.time()
+
+        tdiff = tend - tstart
+
+        logger.info("Took %d seconds to process job %d",tdiff, jobid) 
+        uri = "http://%s:%d/" % server
+        logger.info("Connecting to XML-RPC server on '%s'", uri)
+
+        qm = xmlrpclib.ServerProxy(uri)
+
+        result_data = zlib.compress(cPickle.dumps( (r,tdiff) ))
+        logger.info("Returning results to server at %s", uri)
+        qm.return_result(xmlrpclib.Binary(result_data))
+        logger.info("Returned result to server...")
+    except:
+        logger.info(traceback.format_exc())
 
 
 #--------------------------------------------------------------------------
