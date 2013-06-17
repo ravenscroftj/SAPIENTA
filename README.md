@@ -20,7 +20,7 @@ the installation process illustrated below.
 ## Installation
 
 Installation of SAPIENTA is simple although if you want to use it with the Perl
-annotator it does require some extra configuration. There are two possible installation routes:
+annotator it does require [some extra configuration](https://github.com/ravenscroftj/SAPIENTA/wiki/PerlConfiguration). There are two possible installation routes:
 
 
 ### Installation inside virtualenv (recommended)
