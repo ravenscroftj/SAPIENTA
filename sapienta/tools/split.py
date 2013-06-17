@@ -20,7 +20,7 @@ blacklist = set(['journal-id', 'journal-meta','article-id','article-categories'
 'history','author-notes', 'copyright-statement', 'funding-group',
 'copyright-year','counts','s', 'subj-group','author-notes', 'alt-title',
 'title','ref-list','ack','meta','permissions', 'custom-meta-group',
-'responseDate','request','header', 'xref', 'object-id'])
+'responseDate','request','header', 'xref', 'object-id', 'CURRENT_AUTHORLIST','METADATA'])
 
 class SentenceSplitter:
     '''XML Aware sentence splitter for Partridge
@@ -31,13 +31,17 @@ class SentenceSplitter:
         self.tokenizer = Tokenizer()
         self.inSentence = False
 
-    def split(self, filename, outfile):
+    def split(self, filename, outfile, extra_blacklist=[]):
 
         #read the document
         with open(filename, 'rb') as f:
             self.indoc = minidom.parse(f)
 
-
+        
+        if extra_blacklist != []:
+            logging.info("Adding %s to blacklisted elements", str(extra_blacklist))
+        self.blacklist = blacklist.union(set(extra_blacklist))
+        
         logging.debug("Parsed input file %s " % filename)
 
         # check for existence of multiple s elements, possibly skip
@@ -109,7 +113,7 @@ class SentenceSplitter:
         '''Split text found within element into sentences
         '''
 
-        if (element.nodeType == self.indoc.ELEMENT_NODE) & (element.localName in blacklist):
+        if (element.nodeType == self.indoc.ELEMENT_NODE) & (element.localName in self.blacklist):
             return
 
         text = ""
@@ -177,6 +181,6 @@ class SentenceSplitter:
         for node in element.childNodes:
             if node.nodeType == self.indoc.ELEMENT_NODE:
 
-                if(node.localName not in blacklist) & (not self.inSentence):
+                if(node.localName not in self.blacklist) & (not self.inSentence):
                     self.splitElement( node )
 

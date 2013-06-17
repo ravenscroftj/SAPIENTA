@@ -24,6 +24,8 @@ def main():
         help="If true, annotate the sentence-split XML with CoreSC labels")
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
         help="If set, provides more verbose output")
+    parser.add_option("--blacklist", help="Add elements to blacklisted splitter elements", 
+            dest="extra_blacklist", default="")
     
     (options, args) = parser.parse_args()
 
@@ -73,7 +75,10 @@ def main():
             
             s = SentenceSplitter()
             outfile = name + "_split" + ext
-            s.split(split_infile, outfile)
+            
+            eb = options.extra_blacklist.split(",")
+
+            s.split(split_infile, outfile, extra_blacklist=eb)
 
             anno_infile = outfile
 
