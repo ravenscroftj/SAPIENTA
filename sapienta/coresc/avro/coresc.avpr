@@ -1,0 +1,34 @@
+{"namespace": "uk.ac.ebi.tm.luna.avro",
+ "protocol": "CoreSC",
+
+ "types": [
+     {"name": "Sentence", "type": "record",
+      "fields": [ 
+      	{"name": "content", "type": "string"},
+      	{"name": "corescLabel", "type": "string"}
+      ]
+     }, 
+ 
+     {"name": "Paragraph", "type": "record",
+      "fields": [ {"name": "sentences", "type": {"type": "array", "items": "Sentence"}} ]
+     }, 
+ 
+     {"name": "Header", "type": "record",
+      "fields": [ 
+        {"name": "paragraphs", "type": {"type": "array", "items": "Paragraph"}},
+        {"name": "name", "type": "string"}
+      ]
+     }, 
+     
+     {"name": "Document", "type": "record",
+      "fields": [ {"name": "headers", "type": {"type": "array", "items": "Header"}} ]
+     }
+ ],
+
+ "messages": {
+     "send": {
+         "request": [{"name": "document", "type": "Document"}],
+         "response": {"type": "array", "items": "string"}
+     }
+ }
+}
