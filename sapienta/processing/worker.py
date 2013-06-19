@@ -326,7 +326,7 @@ def main():
     pevt = threading.Event()
 
     try:
-        w = WorkerClient(pevt, (server,port), processes = options.processes)
+        w = WorkerClient(pevt, coord_addr=(server,port), processes = options.processes)
         p = Process(target=lambda:w.run())
         p.start()
         while 1:

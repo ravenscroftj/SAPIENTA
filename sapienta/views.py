@@ -2,6 +2,7 @@ import xmlrpclib
 import os
 import uuid
 import mimetypes
+import zlib
 
 from flask import render_template,request, redirect, url_for, Response
 
@@ -41,7 +42,11 @@ def upload_act():
 
             coordinator = xmlrpclib.ServerProxy(COORD_URI)
 
-            jobid = coordinator.queue_job(os.path.join(destdir,fname))
+            with open(os.path.join(destdir,fname),'rb') as f:
+                data = zlib.compress(f.read())
+                
+
+            jobid = coordinator.queue_job(fname, xmlrpclib.Binary(data))
 
             return redirect(url_for('.view_status', jobid=jobid))
         else:
@@ -57,13 +62,13 @@ def get_paper(jobid):
 
     coordinator = xmlrpclib.ServerProxy(COORD_URI)
 
-    job = coordinator.get_result(jobid)
+    job = coordinator.get_status(jobid)
+    blob = coordinator.get_result(jobid)
+
 
     r  = Response()
     r.mimetype=mimetypes.guess_type(job['filename'])[0]
-    with open(job['filename'],'rb') as f:
-        r.data = f.read()
-    return r
+    return zlib.decompress(blob.data)
 
 
 @app.route("/job/<int:jobid>")
@@ -74,7 +79,7 @@ def view_status(jobid):
 
     coordinator = xmlrpclib.ServerProxy(COORD_URI)
 
-    job = coordinator.get_result(jobid)
+    job = coordinator.get_status(jobid)
 
     if job == None:
         return render_template("error.html", message="""Invalid jobid. Please enter a valid ID and try again""")

@@ -14,7 +14,8 @@ setup(
     entry_points = {"console_scripts" : [
         'pdfxconv = sapienta.tools.pdfxconv:main',
         'sapientmaster = sapienta.processing:main',
-        'sapientworker = sapienta.processing.worker:main'
+        'sapientworker = sapienta.processing.worker:main',
+        'sapientaweb   = sapienta:main'
         ]},
 
     author="James Ravenscroft",
