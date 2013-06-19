@@ -6,6 +6,8 @@ import logging
 import zlib
 import cPickle
 import os
+import xmlrpclib
+
 
 from SimpleXMLRPCServer import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler
 from multiprocessing import Lock
@@ -197,7 +199,6 @@ class CoordinatorServerHandler:
     def get_work(self):
         """Get a job from the database"""
 
-        import xmlrpclib
 
         self.dblock.acquire()
 
@@ -250,11 +251,18 @@ class CoordinatorServerHandler:
             w.do_job(jobblob)
 
 
-    def queue_job(self, filename):
+    def queue_job(self, fname, datablob):
         """Enqueue a new processing job and return a unique ID"""
 
         self.dblock.acquire()
         curr = self.dbconn.cursor()
+
+        data = zlib.decompress(datablob.data)
+
+        filename = os.path.join(self.outdir, os.path.basename(fname))
+
+        with open(filename,'wb') as f:
+            f.write(data)
 
         with self.dbconn:
             curr.execute("INSERT INTO jobs(filename, status) VALUES(?,?)", (filename, 'PENDING'))
@@ -267,12 +275,11 @@ class CoordinatorServerHandler:
 
         return id
 
-    def get_result(self, job_id):
+    def get_status(self, job_id):
         """Get the current status of job ID
         
         This method will return a dict:
         status   - either 'pending', 'working' or 'done'
-        filename - a value for filename is only provided when status=done
         """
 
         self.dblock.acquire()
@@ -284,6 +291,29 @@ class CoordinatorServerHandler:
 
         self.dblock.release()
         return {x: result[x] for x in result.keys() if result[x] != None }
+
+    def get_result(self, job_id):
+        """If a job is done, return the output, else return None
+        
+        You should use get_status to find out if the job is done or not
+        """
+
+        self.dblock.acquire()
+        curr = self.dbconn.cursor()
+
+        with self.dbconn:
+            curr.execute("SELECT * FROM jobs WHERE jobid=? AND status='DONE'",(job_id,))
+            result = curr.fetchone()
+        self.dblock.release()
+
+        if result != None:
+            with open(result['filename'], 'rb') as f:
+                data = f.read()
+            
+            return xmlrpclib.Binary(zlib.compress(data))
+        else:
+            return None
+
 #---------------------------------------------------------------------------------
 
 
