@@ -4,9 +4,7 @@
 import os
 import logging
 import cPickle
-import avl
 
-from collections import Counter
 
 class SAPIENTATrainer:
 
@@ -65,10 +63,11 @@ class SAPIENTATrainer:
     def train(self, filenames, excludeList=[]):
         """Train a model based on a list of filenames and exclude any appearing in excludeList"""
         
-        self.unigrams = {}
-        self.bigrams = {}
+        from sapienta.ml.ngrams import NgramBuilder
 
         self.logger.info("Beginning feature extraction")
+
+        ngrams = NgramBuilder()
 
         for file in filenames:
 
@@ -80,26 +79,14 @@ class SAPIENTATrainer:
             feats = self.extractFeatures(file)
 
             #build lemmatized ngrams collection
-            self.extractLemmatizedNgrams(feats)
-
-            self.logger.debug("Total Unigrams: %d", len(self.unigrams))
-            self.logger.debug("Total Bigrams: %d ", len(self.bigrams))
-
-        #select most relevant ngrams
-        D = len([f for f in filenames if f not in excludeList])
-
-        for u in self.unigrams:
-            self.unigrams[u]['idf'] = float(D) / float( self.unigrams[u]['doc_frequency'])
-
-        for b in self.bigrams:
-            self.bigrams[b]['idf'] = float(D) / float( self.bigrams[b]['doc_frequency'])
+            ngrams.extractLemmatizedNgrams(feats)
 
 
-        self.unitree = avl.new([k for k in self.unigrams if self.unigrams[k] > 3])
-        self.bitree = avl.new([ k for k in self.bigrams if self.bigrams[k] > 3])
-
-        self.logger.info("Finished unigram extraction, kept %d unigrams", len(self.unitree))
-        self.logger.info("Finished bigram extraction, kept %d bigrams", len(self.bitree))
+        unigrams, bigrams = ngrams.getChosenNgrams()
+        print "unigrams retained:", len(unigrams)
+        print "bigrams retained:" , len(bigrams)
+        import sys
+        sys.exit(0)
  
 
     #------------------------------------------------------------------------------------------------
@@ -143,57 +130,6 @@ class SAPIENTATrainer:
                 cPickle.dump(processedSentences, f, -1)
 
             return processedSentences
-
-    #------------------------------------------------------------------------------------------------
-    
-    def extractLemmatizedNgrams(self, features):
-        """Extract lemmatized ngram information from document and add to counter"""
-
-
-        #--------------------------------------------------------------
-        def combine_ngram_hash( localcount,  globalhash):
-            """Support function that combines a local ngram count back into the global container"""
-            for x in localcount:
-                if x not in globalhash:
-                    globalhash[x] = { 'total_frequency' : 0, 
-                        'doc_frequency' : 0, 
-                        'idf' : 0}
-
-                globalhash[x]['total_frequency'] += localcount[x]
-                globalhash[x]['doc_frequency']   += 1
-
-        #--------------------------------------------------------------
-
-        from sapienta.ml.bnc import BncFilter
-        
-        bnc = BncFilter()
-        
-        for sentence in features:
-            lem = sentence.lemmatized
-
-            unicount = Counter()
-            bicount = Counter()
-
-            unigrams = [word for word in lem.split(" ") if not bnc.isStopWord(word)]
-
-            for word in unigrams:
-
-                if word in unigrams:
-                    unicount[word] += 1
-
-
-            for i in range(len(unigrams) - 1):
-                bigram = (unigrams[i] + " " + unigrams[i + 1])
-                bicount[bigram] += 1
-
-
-
-        combine_ngram_hash( unicount, self.unigrams )
-        combine_ngram_hash( bicount,  self.bigrams)
-
-
-
-           
 
 
 #------------------------------------------------------------------------------------------------
