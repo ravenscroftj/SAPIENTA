@@ -29,7 +29,7 @@ import os
 bnc = BncFilter()
 wsdlPath = 'file:/home/james/tmp/ccg_binding.wsdl'
 
-ngramsPath = '/run/media/james/Charismatic/sapienta/Project/Development/Sapient2/corpora/output/All/no_stop_FeaturesFold4'
+ngramsPath = '/media/james/Logistica/sapienta/Project/Development/Sapient2/corpora/output/All/no_stop_FeaturesFold4'
 
 ngrams = {}
 
@@ -77,8 +77,7 @@ class Features:
         unigrams = [token.split('|')[1] for token in tokens]
         unigrams = [uni for uni in unigrams if not bnc.isStopWord(uni)]
         #TODO clean punctuation
-
-	unicount = Counter(unigrams)
+        unicount = Counter(unigrams)
         
         bigrams = []
         for i in range(len(unigrams) - 1):
