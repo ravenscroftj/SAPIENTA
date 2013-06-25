@@ -14,9 +14,7 @@ import os
 import logging
 import pdb
 
-logging.basicConfig()
-logger = logging.getLogger('crf')
-logger.setLevel(logging.DEBUG)
+
 
 class AttributeGenerator:
     
@@ -26,15 +24,14 @@ class AttributeGenerator:
         return crfsuite.Attribute(ascii)
     
     @staticmethod
-    def yieldCandcAttributes(candcFeatures):
-        for label, ngrams in {'unigram':candcFeatures.unigrams, 'bigram':candcFeatures.bigrams, 'trigram':candcFeatures.trigrams}.items():
+    def yieldCandcAttributes(candcFeatures, ngramFilter=lambda x,y: True):
+        for label, ngrams in {'unigram':candcFeatures.unigrams, 'bigram':candcFeatures.bigrams }.items():
             for ngram in ngrams:
-                if isinstance(ngram, tuple):
-                    ngram = '|'.join(ngram)
-                field = '%s=%s' % (label, ngram)
-
-		yield crfsuite.Attribute(field)
-                #yield AttributeGenerator.createUnicodeAttribute(field)
+                if ngramFilter(label, ngram):
+                    ngram = ngram.replace(" ", "|")
+                    field = '%s=%s' % (label, ngram)
+                    
+                    yield AttributeGenerator.createUnicodeAttribute(field)
                 
         for verb in candcFeatures.verbs:
             field = 'verb=' + verb
@@ -154,10 +151,9 @@ def runTagger(path):
     return labels
             
 if __name__ == '__main__':
+    logging.basicConfig()
+    logger = logging.getLogger('crf')
+    logger.setLevel(logging.DEBUG)
     #Trainer().trainModel('/home/james/tmp/no.model')
     runTagger('/home/james/b103844n.xml')
     
-    
-#/nfs/research2/textmining/grabmuel/aho/coresc/crfsuite/crfsuite-0.12-x86_64/bin/crfsuite dump /nfs/research2/textmining/grabmuel/aho/coresc/crfsuite/a.model
-#TierA: 36 min total, 16 minutes for training
-#old model: /nfs/research2/textmining/sapienta/Project/Development/Sapient2/corpora/output/All/no_stop_Fold4/all_Models/Fold4_crfsuite_allmodel.model

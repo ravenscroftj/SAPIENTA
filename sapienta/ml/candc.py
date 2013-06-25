@@ -26,22 +26,10 @@ import logging
 import pdb
 import os
 
+from sapienta.ml.lemma import Lemmatizer
+
 bnc = BncFilter()
 wsdlPath = 'file:/home/james/tmp/ccg_binding.wsdl'
-
-ngramsPath = '/media/james/Logistica/sapienta/Project/Development/Sapient2/corpora/output/All/no_stop_FeaturesFold4'
-
-ngrams = {}
-
-for key, file, flag in [('bigrams','chosenBigrams.txt',2),
-('unigrams','chosenUnigrams.txt',1), ('trigrams', 'chosenTrigrams.txt', 3)]:
-	ngrams[key] = []
-
-	with open(os.path.join(ngramsPath,file),'r') as f:
-		for line in f:
-			words = line.split(" ")
-			ngrams[key].append(" ".join([words[i] for i in range(0,flag)]))
-	print "Loaded %d %s from %s" %(len(ngrams[key]), key, file)
 
 class Features:
     interestingRelations = set(['dobj', 'iobj', 'ncsubj', 'obj2'])
@@ -68,7 +56,11 @@ class Features:
         self.relationTriples = relationTriples
         self.relationMap = self.createRelationMap(relationTriples)
         self.tokens = tokens
-        self.unigrams, self.bigrams, self.trigrams = self.createNgrams(tokens)
+
+
+        l = Lemmatizer()
+        self.ltokens = [ l.lemmatize_word(x) for x in self.tokens]
+        self.unigrams, self.bigrams = self.createNgrams(self.ltokens)
         self.verbs, self.verbsPos = self.createVerbsVerbspos(tokens)
         self.verbClasses = self.createVerbClasses(self.verbs)
         self.passive = self.createPassiveFlag(relationTriples)
@@ -84,37 +76,8 @@ class Features:
             bigram =  (unigrams[i], unigrams[i + 1])	
             bigrams.append(unigrams[i] + " " + unigrams[i + 1])
 
-        bicount = Counter(bigrams)
-    
-        trigrams = []
-        for i in range(len(unigrams) - 2):
-            trigrams.append((unigrams[i], unigrams[i + 1], unigrams[i + 2]))
-
-        tricount = Counter(trigrams)
-
-        results = []
-        gramtypes =  ((unicount,'unigrams'), (bicount,'bigrams'),
-        (tricount,'trigrams'))
-
-        #filter out irrelevant ngrams
-        for counter, name in gramtypes:
-            i = 0
-            resultlist = []
-            for n in ngrams[name]:
-                if counter.has_key(n):
-                    resultlist.append(i)
-                
-                i+=1
-            #end inner loop
-            
-            #print resultlist
-            results.append(resultlist)
-
-        return results
+        return unigrams, bigrams
                     
-
-        #return (unigrams, bigrams, trigrams)
-        
     def createRelationMap(self, relationTriples):
         relMap = {}
         for relation, middle, target in relationTriples:
@@ -156,12 +119,11 @@ class Features:
         tokens: %s
         unigrams: %s
         bigrams: %s
-        trigrams: %s
         verbs: %s
         verbsPos: %s
         passive: %s
         ''' % (self.relationTriples, self.relationMap, self.tokens,
-               self.unigrams, self.bigrams, self.trigrams,
+               self.unigrams, self.bigrams,
                self.verbs, self.verbsPos, self.passive)
     
     def __repr__(self):

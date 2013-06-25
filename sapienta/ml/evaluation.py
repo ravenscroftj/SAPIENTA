@@ -38,7 +38,7 @@ class Evaluation:
         candcClient = SoapClient()
         
         for directory in self.dirs:
-            outputPath = os.path.join(directory, 'pickled_M')
+            outputPath = os.path.join(directory, 'pickled')
             files = [f for f in os.listdir(directory) if f.endswith('.xml') and not f.startswith('.')]
             #files = ['b412883d_mode2.Kamran.xml']
             for f in files:
@@ -201,6 +201,6 @@ if __name__ == '__main__':
     trainingSet = [f for fold in trainingSet for f in fold] #flatten
         
     modelPath = '/home/james/tmp/no.model' 
-    #ev.trainFromPickles(trainingSet, modelPath)
-    ev.evaluateFromPickles(testSet, modelPath)
+    ev.trainFromPickles(trainingSet, modelPath)
+    #ev.evaluateFromPickles(testSet, modelPath)
 

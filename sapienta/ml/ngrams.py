@@ -69,21 +69,8 @@ class NgramBuilder:
         bnc = BncFilter()
         
         for sentence in features:
-            lem = sentence.lemmatized
-
-            unicount = Counter()
-            bicount = Counter()
-
-            unigrams = [word for word in lem.split(" ") if not bnc.isStopWord(word)]
-
-            for word in unigrams:
-                if word in unigrams:
-                    unicount[word] += 1
-
-
-            for i in range(len(unigrams) - 1):
-                bigram = (unigrams[i] + " " + unigrams[i + 1])
-                bicount[bigram] += 1
+            unicount = Counter(sentence.candcFeatures.unigrams)
+            bicount = Counter(sentence.candcFeatures.bigrams)
 
             combine_ngram_hash( unicount, self.unigrams )
             combine_ngram_hash( bicount,  self.bigrams)
