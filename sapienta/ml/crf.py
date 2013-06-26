@@ -71,6 +71,15 @@ class Trainer:
     class PrintingTrainer(crfsuite.Trainer):
         def message(self, s):
             sys.stdout.write(s)
+
+    class LoggingTrainer(crfsuite.Trainer):
+
+        def __init__(self, logger):
+            crfsuite.Trainer.__init__(self)
+            self.logger = logger
+
+        def message(self, s):
+            self.logger.info(s)
             
     def trainModel(self, modelPath):
         labelSequence = crfsuite.StringList()
