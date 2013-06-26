@@ -25,6 +25,8 @@ def train_and_test(fixture):
             "model_fold_%d.model" % foldNo)
 
     logger = logging.getLogger(__name__ + ":trainer:fold_%d" % foldNo)
+    
+    logger.addHandler(logging.FileHandler(os.path.join(corpusDir, "logs", "fold_%d.log" % foldNo)))
 
     #construct a sapienta trainer object
     trainer = SAPIENTATrainer(cacheDir, modelPath, ngramCacheFile, logger)
@@ -46,6 +48,8 @@ class CrossValidationTrainer:
     def __init__(self):
         """Create a cross validating trainer using SAPIENTA trainer as a backend"""
         self.logger = logging.getLogger(__name__)
+
+        
         self.accum_tp = Counter()
         self.accum_fp = Counter()
         self.accum_fn = Counter()
@@ -59,6 +63,13 @@ class CrossValidationTrainer:
         
         self.folds = get_folds( foldsFile )
         self.corpusDir = corpusDir
+
+        if not os.path.exists(os.path.join(corpusDir, "logs")):
+            os.makedirs(os.path.join(corpusDir, "logs"))
+
+        self.logger.addHandler(logging.FileHandler(os.path.join(corpusDir, 
+            "logs", "folds_all.log")))
+
         self.cacheDir = os.path.join(self.corpusDir, "cachedFeatures")
 
         if not os.path.exists(self.cacheDir):
@@ -186,9 +197,7 @@ if __name__ == "__main__":
     
     rootlog = logging.getLogger()
 
-    from logging import FileHandler
 
-    rootlog.addHandler(FileHandler("crossfolds.txt"))
 
     main()
         
