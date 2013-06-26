@@ -25,6 +25,7 @@ import unittest
 import logging
 import pdb
 import os
+import re
 
 from sapienta.ml.lemma import Lemmatizer
 
@@ -69,12 +70,24 @@ class Features:
         unigrams = [token.split('|')[1] for token in tokens]
         unigrams = [uni for uni in unigrams if not bnc.isStopWord(uni)]
         #TODO clean punctuation
+
+        for i in range(0, len(unigrams)):
+
+            #filter out digits in favour of at symbols
+            chars = [x if not x.isdigit() else '@@@' for x in unigrams[i]]
+            unigrams[i] = chars.join("")
+
+            #shorten all floats to standard length
+            unigram[i] = re.sub(r'\@+\.\@+',r'\@\@\@\.\@\@\@', unigram[i])
+
         unicount = Counter(unigrams)
-        
+
         bigrams = []
-        for i in range(len(unigrams) - 1):
+        for i in range(len(tokens) - 1):
             bigram =  (unigrams[i], unigrams[i + 1])	
             bigrams.append(unigrams[i] + " " + unigrams[i + 1])
+
+        #filter out specific numbers and parenthesis in the bigrams
 
         return unigrams, bigrams
                     

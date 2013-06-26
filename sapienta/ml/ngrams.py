@@ -67,6 +67,8 @@ class NgramBuilder:
         
         self.doccount += 1
         bnc = BncFilter()
+
+        #filter out numbers and parenthesis in these ngrams
         
         for sentence in features:
             unicount = Counter(sentence.candcFeatures.unigrams)
