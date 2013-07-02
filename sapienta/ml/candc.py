@@ -75,15 +75,15 @@ class Features:
 
             #filter out digits in favour of at symbols
             chars = [x if not x.isdigit() else '@@@' for x in unigrams[i]]
-            unigrams[i] = chars.join("")
+            unigrams[i] = "".join(chars)
 
             #shorten all floats to standard length
-            unigram[i] = re.sub(r'\@+\.\@+',r'\@\@\@\.\@\@\@', unigram[i])
+            unigrams[i] = re.sub(r'\@+\.\@+',r'\@\@\@\.\@\@\@', unigrams[i])
 
         unicount = Counter(unigrams)
 
         bigrams = []
-        for i in range(len(tokens) - 1):
+        for i in range(len(unigrams) - 1):
             bigram =  (unigrams[i], unigrams[i + 1])	
             bigrams.append(unigrams[i] + " " + unigrams[i + 1])
 

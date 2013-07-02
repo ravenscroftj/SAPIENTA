@@ -5,6 +5,7 @@ import logging
 import os
 import crfsuite
 import cPickle
+import csv
 
 from multiprocessing import Pool, Lock
 
@@ -92,7 +93,8 @@ class CrossValidationTrainer:
             sents = 0
             
             for filedict in fold:
-                fname = os.path.join(corpusDir, filedict['filename'] + "_mode2." + filedict['annotator'] + ".xml")
+                fname = os.path.join(corpusDir, filedict['filename'] + "_mode2." + 
+                        filedict['annotator'] + ".xml")
 
                 sents += int(filedict['total_sentence'])
 
@@ -113,33 +115,37 @@ class CrossValidationTrainer:
         p = Pool()
         
         #run the training
-        results = p.map(train_and_test, fixtures)
+        results = map(train_and_test, fixtures)
 
         #calculate and show results for folds
-        for r in results:
-            self.calcPrecRecall(*r)
+        for f,r in enumerate(results):
+            self.calcPrecRecall(f,*r)
 
         #now show total microaverages for models
         self.calcMicroAverages()
 
     #------------------------------------------------------------------------------------------------
 
-    def calcPrecRecall(self, trueLabels, predictedLabels, probabilities):
+    def calcPrecRecall(self, fold, trueLabels, predictedLabels, probabilities):
         """Calculate precision and recall for sequences of true and predicted labels
         """
         labels = set(trueLabels).union(set(predictedLabels))
         tp = {}
         fp = {}
         fn = {}
+
+        f = open(os.path.join(self.corpusDir, "results_fold_%d.csv" % fold))
+        csvw = csv.writer(f)
+
         for label in labels:
             tp[label] = fp[label] = fn[label] = 0
         
         predictedZip = zip(predictedLabels, probabilities)
-        self.logger.info("True label, Predicted Label, Probability")
+        #self.logger.info("True label, Predicted Label, Probability")
 
         for true, predictedZip in zip(trueLabels, predictedZip):
             predictedLabel, probability = predictedZip
-            self.logger.info("%s, %s, %s", true, predictedLabel, probability)
+            #self.logger.info("%s, %s, %s", true, predictedLabel, probability)
             if true == predictedLabel:
                 tp[true] += 1
                 self.accum_tp[true] += 1
@@ -158,17 +164,31 @@ class CrossValidationTrainer:
             else:
                 prec = tp[label] / (tp[label] + fp[label])
                 rec = tp[label] / (tp[label] + fn[label])
-
+            
+            fm = (2 * prec * rec ) / (prec + rec)
+            
             self.logger.info('prec: %d tp / (%d tp + %d fp) = %f', tp[label], tp[label], fp[label], prec)
             self.logger.info('rec: %d tp / (%d tp + %d fn) = %f', tp[label], tp[label], fn[label], rec)
-            self.logger.info('F-measure: %f',(2 * prec * rec) / (prec + rec))
+            self.logger.info('F-measure: %f',fm)
+
+            csvw.writerow([label, prec, rec, fm])
+
+        
+        #close the csv file
+        f.close()
+
 
     #------------------------------------------------------------------------------------------------
 
     def calcMicroAverages(self):
         """Calculate microaverages for precision recall and f-measure across all 9 folds
         """
-        
+
+
+        f = open(os.path.join(self.corpusDir, "micro_all.csv"))
+
+        csvw = csv.writer(f)
+
         for label in self.accum_tp:
             self.logger.info(label)
             if self.accum_tp[label] == 0:
@@ -178,9 +198,18 @@ class CrossValidationTrainer:
                 prec = self.accum_tp[label] / (self.accum_tp[label] + self.accum_fp[label])
                 rec = self.accum_tp[label] / (self.accum_tp[label] + self.accum_fn[label])
 
+            fm = (2 * prec * rec ) / (prec + rec)
+
             self.logger.info('prec: %d tp / (%d tp + %d fp) = %f', self.accum_tp[label], self.accum_tp[label], self.accum_fp[label], prec)
             self.logger.info('rec: %d tp / (%d tp + %d fn) = %f', self.accum_tp[label], self.accum_tp[label], self.accum_fn[label], rec)
-            self.logger.info('F-measure: %f',(2 * prec * rec) / (prec + rec))
+            self.logger.info('F-measure: %f',fm)
+
+            #write csv result
+            csvw.writerow([label, prec, rec, fm])
+        
+        #close the writer
+        f.close()
+
     
 #------------------------------------------------------------------------------------------------
 

@@ -98,32 +98,8 @@ class SAPIENTATrainer:
         for file in files:
             labelSequence = crfsuite.StringList()
             itemSequence = crfsuite.ItemSequence()
-            
             features = self.extractFeatures(file)
-
-            for sentence in features:
-                self.logger.debug('sentence: %s', 
-                        sentence.content.encode('ascii', 'ignore'))
-
-                label = str(sentence.corescLabel)
-                labelSequence.append(label)
-
-                item = crfsuite.Item()
-                candcFeatures = sentence.candcFeatures
-                candcFeatures.trigrams = []
-
-                del sentence.candcFeatures
-
-                for candcAttrib in AttributeGenerator.yieldCandcAttributes(candcFeatures, ngramFilter=ngramFilter):
-                        self.logger.debug('parser feature: %s', candcAttrib.attr)
-                        item.append(candcAttrib)
-
-                for positionAttrib in AttributeGenerator.yieldPositionAttributes(sentence):
-                        self.logger.debug('position feature: %s', positionAttrib.attr)
-                        item.append(positionAttrib)
-                itemSequence.append(item)         
-
-            del features
+            itemSequence, labelSequence = self.crfdataForFeatures(features)
             trainer.append(itemSequence, labelSequence, 0)
                 
         self.logger.info('done generating features, training...')
@@ -131,6 +107,41 @@ class SAPIENTATrainer:
         trainer.select('l2sgd', 'crf1d')
         trainer.set('c2', '0.1')
         trainer.train(self.modelFile, -1)
+
+    #------------------------------------------------------------------------------------------------
+    def crfdataForFeatures(self, features):
+        """Get a list of labels and crf 'features' from a list of features
+        """
+        labelSequence = crfsuite.StringList()
+        itemSequence = crfsuite.ItemSequence()
+        ngramFilter = lambda l, n: n in ngrams[l]
+
+        for sentence in features:
+            self.logger.debug('sentence: %s', 
+                    sentence.content.encode('ascii', 'ignore'))
+
+            label = str(sentence.corescLabel)
+            labelSequence.append(label)
+
+            item = crfsuite.Item()
+            candcFeatures = sentence.candcFeatures
+            candcFeatures.trigrams = []
+
+            del sentence.candcFeatures
+
+            for candcAttrib in AttributeGenerator.yieldCandcAttributes(candcFeatures, 
+                                                                ngramFilter=ngramFilter):
+
+                    self.logger.debug('parser feature: %s', candcAttrib.attr)
+                    item.append(candcAttrib)
+
+            for positionAttrib in AttributeGenerator.yieldPositionAttributes(sentence):
+                    self.logger.debug('position feature: %s', positionAttrib.attr)
+                    item.append(positionAttrib)
+            itemSequence.append(item)  
+
+        return itemSequence, labelSequence
+
 
     #------------------------------------------------------------------------------------------------
     def testModel( self, testFiles):
@@ -158,25 +169,10 @@ class SAPIENTATrainer:
         
         for doc in testFiles:
             features = self.extractFeatures(doc)
-            itemSequence = crfsuite.ItemSequence()
             trueLabels = []
-            
-            for sentence in features:
-                self.logger.debug('sentence: %s', sentence.content.encode('ascii', 'ignore'))
-                label = str(sentence.corescLabel)
-                trueLabels.append(label)
-                
-                item = crfsuite.Item()
-                candcFeatures = sentence.candcFeatures
-                candcFeatures.trigrams = [] # remove trigrams
-                del sentence.candcFeatures
-                for candcAttrib in AttributeGenerator.yieldCandcAttributes(candcFeatures, ngramFilter=ngramFilter):
-                    self.logger.debug('parser feature: %s', candcAttrib.attr)
-                    item.append(candcAttrib)
-                for positionAttrib in AttributeGenerator.yieldPositionAttributes(sentence):
-                    self.logger.debug('position feature: %s', positionAttrib.attr)
-                    item.append(positionAttrib)
-                itemSequence.append(item)
+
+            itemSequence, labelSequence = self.crfdataForFeatures(features)
+            del labelSequence
                 
             tagger.set(itemSequence)
             predictedLabels = tagger.viterbi()

@@ -25,6 +25,9 @@ class AttributeGenerator:
     
     @staticmethod
     def yieldCandcAttributes(candcFeatures, ngramFilter=lambda x,y: True):
+        """Get attributes from a 'Features' object in CRFSuite-ready format
+        """
+
         for label, ngrams in {'unigram':candcFeatures.unigrams, 'bigram':candcFeatures.bigrams }.items():
             for ngram in ngrams:
                 if ngramFilter(label, ngram):
