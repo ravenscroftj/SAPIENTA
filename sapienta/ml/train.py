@@ -157,12 +157,12 @@ class SAPIENTATrainer:
         self.logger.info("Loading cached ngrams from %s", self.ngramCacheFile)
 
         with open(self.ngramCacheFile, 'rb') as f:
-                ngrams = cPickle.load(f)
-                ngrams['unigram'] = avl.new(ngrams['unigram'])
-                ngrams['bigram']  = avl.new(ngrams['bigram'])
+                self.ngrams = cPickle.load(f)
+                self.ngrams['unigram'] = avl.new(self.ngrams['unigram'])
+                self.ngrams['bigram']  = avl.new(self.ngrams['bigram'])
 
         self.logger.info("Ngram filter has %d bigrams and %d unigrams", 
-                len(ngrams['bigram']), len(ngrams['unigram']))
+                len(self.ngrams['bigram']), len(self.ngrams['unigram']))
 
         ngramFilter = lambda l, n: n in ngrams[l]
         

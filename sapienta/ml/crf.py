@@ -37,7 +37,7 @@ class AttributeGenerator:
                         ngram = ngram.replace(" ", "|")
                         field = '%s=%s' % (label, ngram)
                         
-                        yield AttributeGenerator.createUnicodeAttribute(field)
+                        yield AttributeGenerator.createUnicodeAttribute(unicode(field))
                 
         if 'verbs' in featuresAllowed:
             for verb in candcFeatures.verbs:
@@ -73,7 +73,7 @@ class AttributeGenerator:
                     yield AttributeGenerator.createUnicodeAttribute(field)
                 
     @staticmethod
-    def yieldPositionAttributes(sentence):
+    def yieldPositionAttributes(featuresAllowed, sentence):
         if 'positions' in featuresAllowed:
             for variable, value in vars(sentence).items():
                 if variable not in ('corescLabel', 'content'):

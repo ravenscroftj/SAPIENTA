@@ -134,7 +134,9 @@ class CrossValidationTrainer:
         fp = {}
         fn = {}
 
-        f = open(os.path.join(self.corpusDir, "results_fold_%d.csv" % fold))
+        f = open(os.path.join(self.corpusDir, "results_fold_%d.csv" %
+        fold),'wb')
+
         csvw = csv.writer(f)
 
         for label in labels:
@@ -165,8 +167,11 @@ class CrossValidationTrainer:
                 prec = tp[label] / (tp[label] + fp[label])
                 rec = tp[label] / (tp[label] + fn[label])
             
-            fm = (2 * prec * rec ) / (prec + rec)
-            
+            if (prec + rec) > 0:
+                fm = (2 * prec * rec ) / (prec + rec)
+            else:
+                fm = 0
+
             self.logger.info('prec: %d tp / (%d tp + %d fp) = %f', tp[label], tp[label], fp[label], prec)
             self.logger.info('rec: %d tp / (%d tp + %d fn) = %f', tp[label], tp[label], fn[label], rec)
             self.logger.info('F-measure: %f',fm)
@@ -185,7 +190,7 @@ class CrossValidationTrainer:
         """
 
 
-        f = open(os.path.join(self.corpusDir, "micro_all.csv"))
+        f = open(os.path.join(self.corpusDir, "micro_all.csv"),'wb')
 
         csvw = csv.writer(f)
 
@@ -198,7 +203,10 @@ class CrossValidationTrainer:
                 prec = self.accum_tp[label] / (self.accum_tp[label] + self.accum_fp[label])
                 rec = self.accum_tp[label] / (self.accum_tp[label] + self.accum_fn[label])
 
-            fm = (2 * prec * rec ) / (prec + rec)
+            if (prec + rec) > 0:
+                fm = (2 * prec * rec ) / (prec + rec)
+            else:
+                fm = 0
 
             self.logger.info('prec: %d tp / (%d tp + %d fp) = %f', self.accum_tp[label], self.accum_tp[label], self.accum_fp[label], prec)
             self.logger.info('rec: %d tp / (%d tp + %d fn) = %f', self.accum_tp[label], self.accum_tp[label], self.accum_fn[label], rec)
@@ -224,7 +232,7 @@ def main():
 
 if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     
     rootlog = logging.getLogger()
 
