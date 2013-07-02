@@ -24,51 +24,61 @@ class AttributeGenerator:
         return crfsuite.Attribute(ascii)
     
     @staticmethod
-    def yieldCandcAttributes(candcFeatures, ngramFilter=lambda x,y: True):
+    def yieldCandcAttributes(featuresAllowed, candcFeatures, ngramFilter=lambda x,y: True):
         """Get attributes from a 'Features' object in CRFSuite-ready format
+
+        Dependent on the 'features allowed' list
         """
 
-        for label, ngrams in {'unigram':candcFeatures.unigrams, 'bigram':candcFeatures.bigrams }.items():
-            for ngram in ngrams:
-                if ngramFilter(label, ngram):
-                    ngram = ngram.replace(" ", "|")
-                    field = '%s=%s' % (label, ngram)
-                    
-                    yield AttributeGenerator.createUnicodeAttribute(field)
+        if 'ngrams' in featuresAllowed:
+            for label, ngrams in {'unigram':candcFeatures.unigrams, 'bigram':candcFeatures.bigrams }.items():
+                for ngram in ngrams:
+                    if ngramFilter(label, ngram):
+                        ngram = ngram.replace(" ", "|")
+                        field = '%s=%s' % (label, ngram)
+                        
+                        yield AttributeGenerator.createUnicodeAttribute(field)
                 
-        for verb in candcFeatures.verbs:
-            field = 'verb=' + verb
-            yield AttributeGenerator.createUnicodeAttribute(field)
-            
-        for verbClass in candcFeatures.verbClasses:
-            field = 'verbclass=' + verbClass
-            yield AttributeGenerator.createUnicodeAttribute(field)
-            
-        for verbPos in candcFeatures.verbsPos:
-            field = 'verbPos=' + verbPos
-            yield AttributeGenerator.createUnicodeAttribute(field)
-        
-        if candcFeatures.passive:
-            field = u'passive=yes' 
-        else:
-            field = u'passive=no'
-        yield AttributeGenerator.createUnicodeAttribute(field)
-            
-        for triple in candcFeatures.relationTriples:
-            field = 'triple=' + '|'.join(triple)
-            yield AttributeGenerator.createUnicodeAttribute(field)
-            
-        for relation, targets in candcFeatures.relationMap.items():
-            for target in targets:
-                field = '%s=%s' % (unicode(relation), target)
+        if 'verbs' in featuresAllowed:
+            for verb in candcFeatures.verbs:
+                field = 'verb=' + verb
                 yield AttributeGenerator.createUnicodeAttribute(field)
+        
+        if 'verbclass' in featuresAllowed:
+            for verbClass in candcFeatures.verbClasses:
+                field = 'verbclass=' + verbClass
+                yield AttributeGenerator.createUnicodeAttribute(field)
+        
+        if 'verbpos' in featuresAllowed:
+            for verbPos in candcFeatures.verbsPos:
+                field = 'verbPos=' + verbPos
+                yield AttributeGenerator.createUnicodeAttribute(field)
+        
+        if 'passive' in featuresAllowed:
+            if candcFeatures.passive:
+                field = u'passive=yes' 
+            else:
+                field = u'passive=no'
+            yield AttributeGenerator.createUnicodeAttribute(field)
+            
+        if 'triples' in featuresAllowed:
+            for triple in candcFeatures.relationTriples:
+                field = 'triple=' + '|'.join(triple)
+                yield AttributeGenerator.createUnicodeAttribute(field)
+            
+        if 'relations' in featuresAllowed:
+            for relation, targets in candcFeatures.relationMap.items():
+                for target in targets:
+                    field = '%s=%s' % (unicode(relation), target)
+                    yield AttributeGenerator.createUnicodeAttribute(field)
                 
     @staticmethod
     def yieldPositionAttributes(sentence):
-        for variable, value in vars(sentence).items():
-            if variable not in ('corescLabel', 'content'):
-                field = u'%s=%s' % (variable, value)
-                yield AttributeGenerator.createUnicodeAttribute(field)
+        if 'positions' in featuresAllowed:
+            for variable, value in vars(sentence).items():
+                if variable not in ('corescLabel', 'content'):
+                    field = u'%s=%s' % (variable, value)
+                    yield AttributeGenerator.createUnicodeAttribute(field)
 
 class Trainer:
     class PrintingTrainer(crfsuite.Trainer):

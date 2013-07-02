@@ -18,7 +18,7 @@ def train_and_test(fixture):
     """This method creates a trainer and trains and evaluates a crf model
     """
 
-    cacheDir, corpusDir, foldNo, testFiles, trainFiles, lock = fixture
+    features, cacheDir, corpusDir, foldNo, testFiles, trainFiles, lock = fixture
 
     ngramCacheFile = os.path.join(cacheDir, "ngrams_fold_%d.pickle" % foldNo)
     
@@ -30,7 +30,7 @@ def train_and_test(fixture):
     logger.addHandler(logging.FileHandler(os.path.join(corpusDir, "logs", "fold_%d.log" % foldNo)))
 
     #construct a sapienta trainer object
-    trainer = SAPIENTATrainer(cacheDir, modelPath, ngramCacheFile, logger)
+    trainer = SAPIENTATrainer(features, cacheDir, modelPath, ngramCacheFile, logger)
 
     if os.path.exists(modelPath):
         logger.warn("Not regenerating model for fold %d. "
@@ -57,7 +57,7 @@ class CrossValidationTrainer:
 
     #------------------------------------------------------------------------------------------------
 
-    def train_cross_folds( self, foldsFile, corpusDir):
+    def train_cross_folds( self, foldsFile, corpusDir, features):
         """Train SAPIENTA on folds described in foldsFile."""
 
         from sapienta.ml.folds import get_folds
@@ -109,7 +109,7 @@ class CrossValidationTrainer:
             #calculate which files to use for training
             trainFiles = [file for file in allFiles if file not in testFiles]
 
-            fixtures.append( ( self.cacheDir, self.corpusDir, f, testFiles, trainFiles,None))
+            fixtures.append( ( features, self.cacheDir, self.corpusDir, f, testFiles, trainFiles,None))
             
 
         p = Pool()
@@ -217,7 +217,9 @@ def main():
     """Main entrypoint for cross validation training script"""
 
     t = CrossValidationTrainer()
-    t.train_cross_folds("/home/james/tmp/foldTable.csv", "/home/james/tmp/combined/raw")
+    #features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
+    features = ['ngrams']
+    t.train_cross_folds("/home/james/tmp/foldTable.csv", "/home/james/tmp/combined/raw", features)
 
 
 if __name__ == "__main__":

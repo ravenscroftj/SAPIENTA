@@ -19,13 +19,14 @@ class DummyLock:
 
 class SAPIENTATrainer:
 
-    def __init__(self, cacheDir, modelFile, ngramCacheFile, logger=None, lock=None):
+    def __init__(self, features, cacheDir, modelFile, ngramCacheFile, logger=None, lock=None):
         """Create a sapienta trainer object"""
         if logger == None:
             self.logger = logging.getLogger(__name__)
         else:
             self.logger = logger
 
+        self.features = features
         self.cacheDir = cacheDir
         self.modelFile = modelFile
         self.ngramCacheFile = ngramCacheFile
@@ -91,8 +92,6 @@ class SAPIENTATrainer:
         """Train the CRFSuite system using features extracted from files
         """
 
-        ngramFilter = lambda l, n: n in self.ngrams[l]
-
         trainer = Trainer.LoggingTrainer(self.logger)
 
         for file in files:
@@ -114,7 +113,7 @@ class SAPIENTATrainer:
         """
         labelSequence = crfsuite.StringList()
         itemSequence = crfsuite.ItemSequence()
-        ngramFilter = lambda l, n: n in ngrams[l]
+        ngramFilter = lambda l, n: n in self.ngrams[l]
 
         for sentence in features:
             self.logger.debug('sentence: %s', 
@@ -129,13 +128,13 @@ class SAPIENTATrainer:
 
             del sentence.candcFeatures
 
-            for candcAttrib in AttributeGenerator.yieldCandcAttributes(candcFeatures, 
+            for candcAttrib in AttributeGenerator.yieldCandcAttributes(self.features, candcFeatures, 
                                                                 ngramFilter=ngramFilter):
 
                     self.logger.debug('parser feature: %s', candcAttrib.attr)
                     item.append(candcAttrib)
 
-            for positionAttrib in AttributeGenerator.yieldPositionAttributes(sentence):
+            for positionAttrib in AttributeGenerator.yieldPositionAttributes(self.features, sentence):
                     self.logger.debug('position feature: %s', positionAttrib.attr)
                     item.append(positionAttrib)
             itemSequence.append(item)  
@@ -210,7 +209,7 @@ class SAPIENTATrainer:
                 return features
 
         else:
-            self.logger.debug("Generating features for %s", file)
+            self.logger.info("Generating features for %s", file)
 
             parser = SciXML()
             doc = parser.parse(file)
