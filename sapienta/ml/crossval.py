@@ -150,8 +150,6 @@ class CrossValidationTrainer:
         
         self.logger.info("True label, Predicted Label, Probability")
 
-        print trueLabels
-
         for true, predictedZip in zip(trueLabels, predictedZip):
             predictedLabel, probability = predictedZip
             self.logger.info("%s, %s, %s", true, predictedLabel, probability)

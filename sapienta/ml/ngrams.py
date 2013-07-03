@@ -56,7 +56,7 @@ class NgramBuilder:
                 if self.unigrams[k]['total_frequency'] > 3] )
 
         bigrams  = avl.new( [k for k in self.bigrams
-            if self.getGlue(k) > 5.41e-11])
+            if (self.bigrams[k]['res'] and (self.getGlue(k) > 5.6e-11))])
 
         return unigrams, bigrams
                 
@@ -230,7 +230,7 @@ class NgramBuilder:
 
 
             ngrams[ngram]['glue'] = glue
-            ngrams[ngram]['res'] = 1 if glueS > succsum else 0
+            ngrams[ngram]['res'] = glueS > succsum
 
         
         #calculate tfidf for all ngrams regardless of order

@@ -27,8 +27,6 @@ import pdb
 import os
 import re
 
-from sapienta.ml.lemma import Lemmatizer
-
 bnc = BncFilter()
 wsdlPath = 'file:/home/james/tmp/ccg_binding.wsdl'
 
@@ -59,16 +57,14 @@ class Features:
         self.tokens = tokens
 
 
-        l = Lemmatizer()
-        self.ltokens = [ l.lemmatize_word(x) for x in self.tokens]
-        self.unigrams, self.bigrams, self.trigrams = self.createNgrams(self.ltokens)
+        self.unigrams, self.bigrams, self.trigrams = self.createNgrams(self.tokens)
         self.verbs, self.verbsPos = self.createVerbsVerbspos(tokens)
         self.verbClasses = self.createVerbClasses(self.verbs)
         self.passive = self.createPassiveFlag(relationTriples)
     
     def createNgrams(self, tokens):
         unigrams = [token.split('|')[1] for token in tokens]
-        unigrams = [uni for uni in unigrams if not bnc.isStopWord(uni)]
+        #unigrams = [uni for uni in unigrams if not bnc.isStopWord(uni)]
         #TODO clean punctuation
 
         for i in range(0, len(unigrams)):
