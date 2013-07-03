@@ -61,7 +61,7 @@ class Features:
 
         l = Lemmatizer()
         self.ltokens = [ l.lemmatize_word(x) for x in self.tokens]
-        self.unigrams, self.bigrams = self.createNgrams(self.ltokens)
+        self.unigrams, self.bigrams, self.trigrams = self.createNgrams(self.ltokens)
         self.verbs, self.verbsPos = self.createVerbsVerbspos(tokens)
         self.verbClasses = self.createVerbClasses(self.verbs)
         self.passive = self.createPassiveFlag(relationTriples)
@@ -80,16 +80,21 @@ class Features:
             #shorten all floats to standard length
             unigrams[i] = re.sub(r'\@+\.\@+',r'\@\@\@\.\@\@\@', unigrams[i])
 
-        unicount = Counter(unigrams)
 
         bigrams = []
         for i in range(len(unigrams) - 1):
             bigram =  (unigrams[i], unigrams[i + 1])	
             bigrams.append(unigrams[i] + " " + unigrams[i + 1])
 
+        trigrams = []
+        for i in range(len(unigrams) - 2):
+            trigram =  (unigrams[i], unigrams[i + 1], unigrams[i+2])	
+            trigrams.append(" ".join(trigram))
+
+
         #filter out specific numbers and parenthesis in the bigrams
 
-        return unigrams, bigrams
+        return unigrams, bigrams, trigrams
                     
     def createRelationMap(self, relationTriples):
         relMap = {}

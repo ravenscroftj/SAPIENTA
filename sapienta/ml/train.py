@@ -168,11 +168,10 @@ class SAPIENTATrainer:
         
         for doc in testFiles:
             features = self.extractFeatures(doc)
-            trueLabels = []
 
             itemSequence, labelSequence = self.crfdataForFeatures(features)
-            del labelSequence
-                
+            trueLabels = labelSequence
+
             tagger.set(itemSequence)
             predictedLabels = tagger.viterbi()
             probabilities = []
@@ -187,8 +186,6 @@ class SAPIENTATrainer:
 
         return allTrueLabels, allPredictedLabels, allProbabilities
             
-        self.calcPrecRecall(allTrueLabels, allPredictedLabels, allProbabilities)
-
     #------------------------------------------------------------------------------------------------
     
     def extractFeatures(self, file):

@@ -87,6 +87,9 @@ class CrossValidationTrainer:
     
         fixtures = []
 
+        #TEMPORARY THING THAT STOPS LOOKING AFTER 3 FOLDS
+        self.folds = self.folds[:3]
+
         for f, fold in enumerate(self.folds):
 
             testFiles = []
@@ -129,6 +132,7 @@ class CrossValidationTrainer:
     def calcPrecRecall(self, fold, trueLabels, predictedLabels, probabilities):
         """Calculate precision and recall for sequences of true and predicted labels
         """
+
         labels = set(trueLabels).union(set(predictedLabels))
         tp = {}
         fp = {}
@@ -143,11 +147,14 @@ class CrossValidationTrainer:
             tp[label] = fp[label] = fn[label] = 0
         
         predictedZip = zip(predictedLabels, probabilities)
-        #self.logger.info("True label, Predicted Label, Probability")
+        
+        self.logger.info("True label, Predicted Label, Probability")
+
+        print trueLabels
 
         for true, predictedZip in zip(trueLabels, predictedZip):
             predictedLabel, probability = predictedZip
-            #self.logger.info("%s, %s, %s", true, predictedLabel, probability)
+            self.logger.info("%s, %s, %s", true, predictedLabel, probability)
             if true == predictedLabel:
                 tp[true] += 1
                 self.accum_tp[true] += 1
@@ -232,7 +239,7 @@ def main():
 
 if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     
     rootlog = logging.getLogger()
 
