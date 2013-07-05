@@ -13,7 +13,11 @@ from docparser import SciXML
 import os
 import logging
 import pdb
+import cPickle
+import avl
 
+logger = logging.getLogger('crf')
+logger.setLevel(logging.INFO)
 
 
 class AttributeGenerator:
@@ -134,22 +138,32 @@ class Trainer:
         trainer.train(modelPath, -1)
     
 class Tagger:
-    def __init__(self, modelpath):
+    def __init__(self, modelpath, ngramfile):
         self.tagger = crfsuite.Tagger()
         self.tagger.open(modelpath)
         logger.info('model loaded')
         self.candcClient = SoapClient()
+
+        self.features =  ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
+
+        with open(ngramfile, 'rb') as f:
+                self.ngrams = cPickle.load(f)
+                self.ngrams['unigram'] = avl.new(self.ngrams['unigram'])
+                self.ngrams['bigram']  = avl.new(self.ngrams['bigram'])
         
     def getSentenceLabelsWithProbabilities(self, doc):
         itemSequence = crfsuite.ItemSequence()
+
+        ngramFilter = lambda l, n: n in self.ngrams[l]
+
         for sentence in doc.yieldSentences():
             logger.debug('sentence: %s', sentence.content.encode('ascii', 'ignore'))
             item = crfsuite.Item()
             candcFeatures = self.candcClient.getFeatures(sentence.content)
-            for candcAttrib in AttributeGenerator.yieldCandcAttributes(candcFeatures):
+            for candcAttrib in AttributeGenerator.yieldCandcAttributes(self.features, candcFeatures, ngramFilter):
                 logger.debug('parser feature: %s', candcAttrib.attr)
                 item.append(candcAttrib)
-            for positionAttrib in AttributeGenerator.yieldPositionAttributes(sentence):
+            for positionAttrib in AttributeGenerator.yieldPositionAttributes(self.features, sentence):
                 logger.debug('position feature: %s', positionAttrib.attr)
                 item.append(positionAttrib)
             itemSequence.append(item)
@@ -165,7 +179,8 @@ class Tagger:
 
 
 def runTagger(path):
-    tagger = Tagger('/home/james/tmp/no.model')
+    tagger = Tagger('/home/james/tmp/combined/raw/model_fold_0.model', 
+            '/home/james/tmp/combined/raw/cachedFeatures/ngrams_fold_0.pickle')
     parser = SciXML()
     doc = parser.parse(path)
     labels, probabilites = tagger.getSentenceLabelsWithProbabilities(doc)
@@ -174,8 +189,7 @@ def runTagger(path):
             
 if __name__ == '__main__':
     logging.basicConfig()
-    logger = logging.getLogger('crf')
-    logger.setLevel(logging.DEBUG)
+
     #Trainer().trainModel('/home/james/tmp/no.model')
     runTagger('/home/james/b103844n.xml')
     

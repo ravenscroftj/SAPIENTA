@@ -88,7 +88,7 @@ class CrossValidationTrainer:
         fixtures = []
 
         #TEMPORARY THING THAT STOPS LOOKING AFTER 3 FOLDS
-        self.folds = self.folds[:1]
+        #self.folds = self.folds[:1]
 
         for f, fold in enumerate(self.folds):
 
@@ -118,7 +118,8 @@ class CrossValidationTrainer:
         p = Pool()
         
         #run the training
-        results = map(train_and_test, fixtures)
+        p.map(train_and_test, fixtures)
+        #results = map(train_and_test, fixtures)
 
         #calculate and show results for folds
         for f,r in enumerate(results):
@@ -230,8 +231,8 @@ def main():
     """Main entrypoint for cross validation training script"""
 
     t = CrossValidationTrainer()
-    #features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
-    features = ['ngrams']
+    features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
+    #features = ['ngrams']
     t.train_cross_folds("/home/james/tmp/foldTable.csv", "/home/james/tmp/combined/raw", features)
 
 

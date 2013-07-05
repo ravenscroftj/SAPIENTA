@@ -90,7 +90,7 @@ class Features:
 
 
             #shorten all floats to standard length
-            unigrams[i] = re.sub(r'\@+\.\@+',r'\@\@\@\.\@\@\@', unigrams[i])
+            unigrams[i] = re.sub(r'\@+\.\@+',"@@@.@@@", unigrams[i])
 
 
         bigrams = []
