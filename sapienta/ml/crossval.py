@@ -88,7 +88,7 @@ class CrossValidationTrainer:
         fixtures = []
 
         #TEMPORARY THING THAT STOPS LOOKING AFTER 3 FOLDS
-        self.folds = self.folds[:3]
+        self.folds = self.folds[:1]
 
         for f, fold in enumerate(self.folds):
 

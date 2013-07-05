@@ -30,6 +30,13 @@ import re
 bnc = BncFilter()
 wsdlPath = 'file:/home/james/tmp/ccg_binding.wsdl'
 
+
+logger = logging.getLogger(__name__)
+    
+logger.addHandler(logging.FileHandler("ngrams.log"))
+logger.setLevel(logging.DEBUG)
+
+
 class Features:
     interestingRelations = set(['dobj', 'iobj', 'ncsubj', 'obj2'])
     passiveRelation = 'passiveNcsubj'
@@ -61,9 +68,11 @@ class Features:
         self.verbs, self.verbsPos = self.createVerbsVerbspos(tokens)
         self.verbClasses = self.createVerbClasses(self.verbs)
         self.passive = self.createPassiveFlag(relationTriples)
+
     
     def createNgrams(self, tokens):
-        unigrams = [token.split('|')[1] for token in tokens]
+        unigrams = [token.split('|')[1] for token in tokens if token != ""]
+        unigrams = map(self.escapePunctuation, unigrams)
         #unigrams = [uni for uni in unigrams if not bnc.isStopWord(uni)]
         #TODO clean punctuation
 
@@ -88,9 +97,49 @@ class Features:
             trigrams.append(" ".join(trigram))
 
 
-        #filter out specific numbers and parenthesis in the bigrams
+        #filter out specific numbers and parenthesis in the unigrams, bigrams
+        #bigrams = map(self.escapePunctuation, bigrams)
 
         return unigrams, bigrams, trigrams
+
+    def escapePunctuation(self, ngram):
+        """Make sure that ngram punctuation makes sense"""
+
+        if ngram == "":
+            return ""
+
+        brackets  = "[{()}]"
+        opposites = "]})({]"
+
+        #logger.debug("Input: '%s'", ngram)
+
+        words = ngram.split(" ")
+
+        final_words = []
+
+        #iterate through each word in the ngram
+        for word in words:
+            chars = list(word)
+            
+            word_done = False
+
+            stack  = []
+
+            if (len(chars) > 1) and (chars[-1] in ";,"):
+                chars.pop(-1)
+
+            for i, ch in enumerate(chars):
+                if ch in brackets:
+                    chars.pop(i)
+
+            #now add word to "final words" list
+            final_words.append("".join(chars))
+
+        #logger.debug("output: '%s'", " ".join(final_words))
+        #end for words and return words imploded together with spaces inbetween
+        return " ".join(final_words)
+
+
                     
     def createRelationMap(self, relationTriples):
         relMap = {}
@@ -150,6 +199,10 @@ class SoapClient:
         
     def callSoap(self, s):
         #TODO ascii only input? caused by soap server?
+        
+        if (s[-1] == ".") and (s[-2] != " "):
+            s = s[:-1] + " ."
+
         ascii = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore')
         result = self.suds.service.parse_string(ascii)
         return result
@@ -172,6 +225,7 @@ class SoapClient:
             if line.startswith('<c>'):
                 tokens += line.split(' ')[1:]
         tokens = filter(lambda x: '|' in x, tokens)
+
         return Features(relationTriples, tokens)
     
     def getFeatures(self, sentence):
