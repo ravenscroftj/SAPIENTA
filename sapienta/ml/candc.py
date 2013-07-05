@@ -78,9 +78,16 @@ class Features:
 
         for i in range(0, len(unigrams)):
 
+            
+            #lower case all the things
+            unigrams[i] = unigrams[i].lower()
+
+            #split
+
             #filter out digits in favour of at symbols
             chars = [x if not x.isdigit() else '@@@' for x in unigrams[i]]
             unigrams[i] = "".join(chars)
+
 
             #shorten all floats to standard length
             unigrams[i] = re.sub(r'\@+\.\@+',r'\@\@\@\.\@\@\@', unigrams[i])
@@ -199,14 +206,53 @@ class SoapClient:
         
     def callSoap(self, s):
         #TODO ascii only input? caused by soap server?
-        
-        if (s[-1] == ".") and (s[-2] != " "):
-            s = s[:-1] + " ."
+        s = self.cleanseInput(s)
 
         ascii = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore')
         result = self.suds.service.parse_string(ascii)
         return result
-    
+
+    def cleanseInput(self, s):
+        """Cleanse input sentence s"""
+
+        #separate out punctuation , ; : ? is moved a space away from the words
+        s = re.sub(r'(?<!(\s))(\,|\:|\?|\;)(?=(?:\s))', lambda m: " " + (m.group(2) or ''), s)
+        
+        #move fullstop away from last word, i.e. end of sentence. -> end of sentence .
+        if (s[-1] == ".") and (s[-2] != " "):
+            s = s[:-1] + " ."
+        
+        words = s.split(" ")
+
+        final_words = []
+        for word in [word.strip() for word in words]:
+
+            if len(word) < 1:
+                continue
+
+            if (word[0] in "[{(") and ( len(word.split(word[0])) == 2):
+
+                #if the word is surrounded by brackets, do (word) -> ( word )
+                if re.match(r'^(\[)(.+?)(\])$|^(\{)(.+?)(\})$|^(\()(.+?)(\))$', word):
+                    word = re.sub(r'^(\[|\{|\()(.+?)(\]|\}|\))$', r'\1 \2 \3', word)
+                #if word has weird brackets, separate i.e. (word}   ->  (word }
+                elif re.match(r'^(\[|\{|\()(.+?)(\]|\}|\))$', word):
+                    word = re.sub(r'^(.+?)(\]|\}|\))$', r'\1 \2', word)
+
+                #if the word has no closing bracket move opening bracket (word -> ( word
+                elif len(re.split(r'\]|\}|\)', word)) == 1:
+                    word = word[0] + " " + word[1:]
+
+            elif word[-1] in "]})":
+                word = word[:-1] + " " + word[-1]
+
+
+            final_words.append(word)
+
+        return " ".join(final_words)
+
+
+
     def parseResult(self, result):
         relationTriples = []
         for line in result.splitlines():
