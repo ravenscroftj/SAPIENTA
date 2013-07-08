@@ -1,10 +1,14 @@
 from crf import runTagger
 import os
 import sys
+import logging
+
+
+logging.basicConfig(level=logging.INFO)
 
 from xml.dom import minidom
 
-PAPER_PATH = "/home/james/tmp/corpus/test"
+PAPER_PATH = "/home/james/tmp/combined/raw/input"
 
 total = 0
 correct = 0

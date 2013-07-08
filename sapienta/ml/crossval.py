@@ -118,7 +118,7 @@ class CrossValidationTrainer:
         p = Pool()
         
         #run the training
-        p.map(train_and_test, fixtures)
+        results = p.map(train_and_test, fixtures)
         #results = map(train_and_test, fixtures)
 
         #calculate and show results for folds
@@ -184,6 +184,12 @@ class CrossValidationTrainer:
 
             csvw.writerow([label, prec, rec, fm])
 
+        totalSentences = sum(tp.values()) + sum(fp.values())
+
+        rightpc = sum(tp.values()) * 100 /  totalSentences
+        wrongpc = sum(fp.values()) * 100 /  totalSentences
+        #write the accuracy
+        csvw.writerow(["Classifier Accuracy", rightpc, wrongpc ])
         
         #close the csv file
         f.close()
@@ -220,6 +226,12 @@ class CrossValidationTrainer:
 
             #write csv result
             csvw.writerow([label, prec, rec, fm])
+        
+        totalSentences = sum(self.accum_tp.values()) + sum(self.accum_fp.values())
+        rightpc = sum(self.accum_tp.values()) * 100 /  totalSentences
+        wrongpc = sum(self.accum_fp.values()) * 100 /  totalSentences
+        #write the accuracy
+        csvw.writerow(["Classifier Accuracy", rightpc, wrongpc ])
         
         #close the writer
         f.close()
