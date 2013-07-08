@@ -19,13 +19,14 @@ class DummyLock:
 
 class SAPIENTATrainer:
 
-    def __init__(self, cacheDir, modelFile, ngramCacheFile, logger=None, lock=None):
+    def __init__(self, features, cacheDir, modelFile, ngramCacheFile, logger=None, lock=None):
         """Create a sapienta trainer object"""
         if logger == None:
             self.logger = logging.getLogger(__name__)
         else:
             self.logger = logger
 
+        self.features = features
         self.cacheDir = cacheDir
         self.modelFile = modelFile
         self.ngramCacheFile = ngramCacheFile
@@ -91,39 +92,13 @@ class SAPIENTATrainer:
         """Train the CRFSuite system using features extracted from files
         """
 
-        ngramFilter = lambda l, n: n in self.ngrams[l]
-
         trainer = Trainer.LoggingTrainer(self.logger)
 
         for file in files:
             labelSequence = crfsuite.StringList()
             itemSequence = crfsuite.ItemSequence()
-            
             features = self.extractFeatures(file)
-
-            for sentence in features:
-                self.logger.debug('sentence: %s', 
-                        sentence.content.encode('ascii', 'ignore'))
-
-                label = str(sentence.corescLabel)
-                labelSequence.append(label)
-
-                item = crfsuite.Item()
-                candcFeatures = sentence.candcFeatures
-                candcFeatures.trigrams = []
-
-                del sentence.candcFeatures
-
-                for candcAttrib in AttributeGenerator.yieldCandcAttributes(candcFeatures, ngramFilter=ngramFilter):
-                        self.logger.debug('parser feature: %s', candcAttrib.attr)
-                        item.append(candcAttrib)
-
-                for positionAttrib in AttributeGenerator.yieldPositionAttributes(sentence):
-                        self.logger.debug('position feature: %s', positionAttrib.attr)
-                        item.append(positionAttrib)
-                itemSequence.append(item)         
-
-            del features
+            itemSequence, labelSequence = self.crfdataForFeatures(features)
             trainer.append(itemSequence, labelSequence, 0)
                 
         self.logger.info('done generating features, training...')
@@ -131,6 +106,41 @@ class SAPIENTATrainer:
         trainer.select('l2sgd', 'crf1d')
         trainer.set('c2', '0.1')
         trainer.train(self.modelFile, -1)
+
+    #------------------------------------------------------------------------------------------------
+    def crfdataForFeatures(self, features):
+        """Get a list of labels and crf 'features' from a list of features
+        """
+        labelSequence = crfsuite.StringList()
+        itemSequence = crfsuite.ItemSequence()
+        ngramFilter = lambda l, n: n in self.ngrams[l]
+
+        for sentence in features:
+            self.logger.debug('sentence: %s', 
+                    sentence.content.encode('ascii', 'ignore'))
+
+            label = str(sentence.corescLabel)
+            labelSequence.append(label)
+
+            item = crfsuite.Item()
+            candcFeatures = sentence.candcFeatures
+            candcFeatures.trigrams = []
+
+            del sentence.candcFeatures
+
+            for candcAttrib in AttributeGenerator.yieldCandcAttributes(self.features, candcFeatures, 
+                                                                ngramFilter=ngramFilter):
+
+                    self.logger.debug('parser feature: %s', candcAttrib.attr)
+                    item.append(candcAttrib)
+
+            for positionAttrib in AttributeGenerator.yieldPositionAttributes(self.features, sentence):
+                    self.logger.debug('position feature: %s', positionAttrib.attr)
+                    item.append(positionAttrib)
+            itemSequence.append(item)  
+
+        return itemSequence, labelSequence
+
 
     #------------------------------------------------------------------------------------------------
     def testModel( self, testFiles):
@@ -147,37 +157,21 @@ class SAPIENTATrainer:
         self.logger.info("Loading cached ngrams from %s", self.ngramCacheFile)
 
         with open(self.ngramCacheFile, 'rb') as f:
-                ngrams = cPickle.load(f)
-                ngrams['unigram'] = avl.new(ngrams['unigram'])
-                ngrams['bigram']  = avl.new(ngrams['bigram'])
+                self.ngrams = cPickle.load(f)
+                self.ngrams['unigram'] = avl.new(self.ngrams['unigram'])
+                self.ngrams['bigram']  = avl.new(self.ngrams['bigram'])
 
         self.logger.info("Ngram filter has %d bigrams and %d unigrams", 
-                len(ngrams['bigram']), len(ngrams['unigram']))
+                len(self.ngrams['bigram']), len(self.ngrams['unigram']))
 
         ngramFilter = lambda l, n: n in ngrams[l]
         
         for doc in testFiles:
             features = self.extractFeatures(doc)
-            itemSequence = crfsuite.ItemSequence()
-            trueLabels = []
-            
-            for sentence in features:
-                self.logger.debug('sentence: %s', sentence.content.encode('ascii', 'ignore'))
-                label = str(sentence.corescLabel)
-                trueLabels.append(label)
-                
-                item = crfsuite.Item()
-                candcFeatures = sentence.candcFeatures
-                candcFeatures.trigrams = [] # remove trigrams
-                del sentence.candcFeatures
-                for candcAttrib in AttributeGenerator.yieldCandcAttributes(candcFeatures, ngramFilter=ngramFilter):
-                    self.logger.debug('parser feature: %s', candcAttrib.attr)
-                    item.append(candcAttrib)
-                for positionAttrib in AttributeGenerator.yieldPositionAttributes(sentence):
-                    self.logger.debug('position feature: %s', positionAttrib.attr)
-                    item.append(positionAttrib)
-                itemSequence.append(item)
-                
+
+            itemSequence, labelSequence = self.crfdataForFeatures(features)
+            trueLabels = labelSequence
+
             tagger.set(itemSequence)
             predictedLabels = tagger.viterbi()
             probabilities = []
@@ -192,8 +186,6 @@ class SAPIENTATrainer:
 
         return allTrueLabels, allPredictedLabels, allProbabilities
             
-        self.calcPrecRecall(allTrueLabels, allPredictedLabels, allProbabilities)
-
     #------------------------------------------------------------------------------------------------
     
     def extractFeatures(self, file):
@@ -214,7 +206,7 @@ class SAPIENTATrainer:
                 return features
 
         else:
-            self.logger.debug("Generating features for %s", file)
+            self.logger.info("Generating features for %s", file)
 
             parser = SciXML()
             doc = parser.parse(file)

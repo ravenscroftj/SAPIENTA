@@ -25,11 +25,17 @@ import unittest
 import logging
 import pdb
 import os
-
-from sapienta.ml.lemma import Lemmatizer
+import re
 
 bnc = BncFilter()
 wsdlPath = 'file:/home/james/tmp/ccg_binding.wsdl'
+
+
+logger = logging.getLogger(__name__)
+    
+logger.addHandler(logging.FileHandler("ngrams.log"))
+logger.setLevel(logging.DEBUG)
+
 
 class Features:
     interestingRelations = set(['dobj', 'iobj', 'ncsubj', 'obj2'])
@@ -58,25 +64,89 @@ class Features:
         self.tokens = tokens
 
 
-        l = Lemmatizer()
-        self.ltokens = [ l.lemmatize_word(x) for x in self.tokens]
-        self.unigrams, self.bigrams = self.createNgrams(self.ltokens)
+        self.unigrams, self.bigrams, self.trigrams = self.createNgrams(self.tokens)
         self.verbs, self.verbsPos = self.createVerbsVerbspos(tokens)
         self.verbClasses = self.createVerbClasses(self.verbs)
         self.passive = self.createPassiveFlag(relationTriples)
+
     
     def createNgrams(self, tokens):
-        unigrams = [token.split('|')[1] for token in tokens]
-        unigrams = [uni for uni in unigrams if not bnc.isStopWord(uni)]
+        unigrams = [token.split('|')[1] for token in tokens if token != ""]
+        unigrams = map(self.escapePunctuation, unigrams)
+        #unigrams = [uni for uni in unigrams if not bnc.isStopWord(uni)]
         #TODO clean punctuation
-        unicount = Counter(unigrams)
-        
+
+        for i in range(0, len(unigrams)):
+
+            
+            #lower case all the things
+            unigrams[i] = unigrams[i].lower()
+
+            #split
+
+            #filter out digits in favour of at symbols
+            chars = [x if not x.isdigit() else '@@@' for x in unigrams[i]]
+            unigrams[i] = "".join(chars)
+
+
+            #shorten all floats to standard length
+            unigrams[i] = re.sub(r'\@+\.\@+',"@@@.@@@", unigrams[i])
+
+
         bigrams = []
         for i in range(len(unigrams) - 1):
             bigram =  (unigrams[i], unigrams[i + 1])	
             bigrams.append(unigrams[i] + " " + unigrams[i + 1])
 
-        return unigrams, bigrams
+        trigrams = []
+        for i in range(len(unigrams) - 2):
+            trigram =  (unigrams[i], unigrams[i + 1], unigrams[i+2])	
+            trigrams.append(" ".join(trigram))
+
+
+        #filter out specific numbers and parenthesis in the unigrams, bigrams
+        #bigrams = map(self.escapePunctuation, bigrams)
+
+        return unigrams, bigrams, trigrams
+
+    def escapePunctuation(self, ngram):
+        """Make sure that ngram punctuation makes sense"""
+
+        if ngram == "":
+            return ""
+
+        brackets  = "[{()}]"
+        opposites = "]})({]"
+
+        #logger.debug("Input: '%s'", ngram)
+
+        words = ngram.split(" ")
+
+        final_words = []
+
+        #iterate through each word in the ngram
+        for word in words:
+            chars = list(word)
+            
+            word_done = False
+
+            stack  = []
+
+            if (len(chars) > 1) and (chars[-1] in ";,"):
+                chars.pop(-1)
+
+            for i, ch in enumerate(chars):
+                if ch in brackets:
+                    chars.pop(i)
+
+            #now add word to "final words" list
+            final_words.append("".join(chars))
+
+        #logger.debug("output: '%s'", " ".join(final_words))
+        #end for words and return words imploded together with spaces inbetween
+        return " ".join(final_words)
+
+
                     
     def createRelationMap(self, relationTriples):
         relMap = {}
@@ -136,10 +206,53 @@ class SoapClient:
         
     def callSoap(self, s):
         #TODO ascii only input? caused by soap server?
+        s = self.cleanseInput(s)
+
         ascii = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore')
         result = self.suds.service.parse_string(ascii)
         return result
-    
+
+    def cleanseInput(self, s):
+        """Cleanse input sentence s"""
+
+        #separate out punctuation , ; : ? is moved a space away from the words
+        s = re.sub(r'(?<!(\s))(\,|\:|\?|\;)(?=(?:\s))', lambda m: " " + (m.group(2) or ''), s)
+        
+        #move fullstop away from last word, i.e. end of sentence. -> end of sentence .
+        if (s[-1] == ".") and (s[-2] != " "):
+            s = s[:-1] + " ."
+        
+        words = s.split(" ")
+
+        final_words = []
+        for word in [word.strip() for word in words]:
+
+            if len(word) < 1:
+                continue
+
+            if (word[0] in "[{(") and ( len(word.split(word[0])) == 2):
+
+                #if the word is surrounded by brackets, do (word) -> ( word )
+                if re.match(r'^(\[)(.+?)(\])$|^(\{)(.+?)(\})$|^(\()(.+?)(\))$', word):
+                    word = re.sub(r'^(\[|\{|\()(.+?)(\]|\}|\))$', r'\1 \2 \3', word)
+                #if word has weird brackets, separate i.e. (word}   ->  (word }
+                elif re.match(r'^(\[|\{|\()(.+?)(\]|\}|\))$', word):
+                    word = re.sub(r'^(.+?)(\]|\}|\))$', r'\1 \2', word)
+
+                #if the word has no closing bracket move opening bracket (word -> ( word
+                elif len(re.split(r'\]|\}|\)', word)) == 1:
+                    word = word[0] + " " + word[1:]
+
+            elif word[-1] in "]})":
+                word = word[:-1] + " " + word[-1]
+
+
+            final_words.append(word)
+
+        return " ".join(final_words)
+
+
+
     def parseResult(self, result):
         relationTriples = []
         for line in result.splitlines():
@@ -158,6 +271,7 @@ class SoapClient:
             if line.startswith('<c>'):
                 tokens += line.split(' ')[1:]
         tokens = filter(lambda x: '|' in x, tokens)
+
         return Features(relationTriples, tokens)
     
     def getFeatures(self, sentence):

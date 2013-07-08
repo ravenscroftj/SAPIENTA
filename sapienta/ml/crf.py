@@ -13,7 +13,11 @@ from docparser import SciXML
 import os
 import logging
 import pdb
+import cPickle
+import avl
 
+logger = logging.getLogger('crf')
+logger.setLevel(logging.INFO)
 
 
 class AttributeGenerator:
@@ -24,48 +28,61 @@ class AttributeGenerator:
         return crfsuite.Attribute(ascii)
     
     @staticmethod
-    def yieldCandcAttributes(candcFeatures, ngramFilter=lambda x,y: True):
-        for label, ngrams in {'unigram':candcFeatures.unigrams, 'bigram':candcFeatures.bigrams }.items():
-            for ngram in ngrams:
-                if ngramFilter(label, ngram):
-                    ngram = ngram.replace(" ", "|")
-                    field = '%s=%s' % (label, ngram)
-                    
+    def yieldCandcAttributes(featuresAllowed, candcFeatures, ngramFilter=lambda x,y: True):
+        """Get attributes from a 'Features' object in CRFSuite-ready format
+
+        Dependent on the 'features allowed' list
+        """
+
+        if 'ngrams' in featuresAllowed:
+            for label, ngrams in {'unigram':candcFeatures.unigrams, 'bigram':candcFeatures.bigrams }.items():
+                for ngram in ngrams:
+                    if ngramFilter(label, ngram):
+                        ngram = ngram.replace(" ", "|")
+                        field = '%s=%s' % (label, ngram)
+                        
+                        yield AttributeGenerator.createUnicodeAttribute(unicode(field))
+                
+        if 'verbs' in featuresAllowed:
+            for verb in candcFeatures.verbs:
+                field = 'verb=' + verb
+                yield AttributeGenerator.createUnicodeAttribute(field)
+        
+        if 'verbclass' in featuresAllowed:
+            for verbClass in candcFeatures.verbClasses:
+                field = 'verbclass=' + verbClass
+                yield AttributeGenerator.createUnicodeAttribute(field)
+        
+        if 'verbpos' in featuresAllowed:
+            for verbPos in candcFeatures.verbsPos:
+                field = 'verbPos=' + verbPos
+                yield AttributeGenerator.createUnicodeAttribute(field)
+        
+        if 'passive' in featuresAllowed:
+            if candcFeatures.passive:
+                field = u'passive=yes' 
+            else:
+                field = u'passive=no'
+            yield AttributeGenerator.createUnicodeAttribute(field)
+            
+        if 'triples' in featuresAllowed:
+            for triple in candcFeatures.relationTriples:
+                field = 'triple=' + '|'.join(triple)
+                yield AttributeGenerator.createUnicodeAttribute(field)
+            
+        if 'relations' in featuresAllowed:
+            for relation, targets in candcFeatures.relationMap.items():
+                for target in targets:
+                    field = '%s=%s' % (unicode(relation), target)
                     yield AttributeGenerator.createUnicodeAttribute(field)
                 
-        for verb in candcFeatures.verbs:
-            field = 'verb=' + verb
-            yield AttributeGenerator.createUnicodeAttribute(field)
-            
-        for verbClass in candcFeatures.verbClasses:
-            field = 'verbclass=' + verbClass
-            yield AttributeGenerator.createUnicodeAttribute(field)
-            
-        for verbPos in candcFeatures.verbsPos:
-            field = 'verbPos=' + verbPos
-            yield AttributeGenerator.createUnicodeAttribute(field)
-        
-        if candcFeatures.passive:
-            field = u'passive=yes' 
-        else:
-            field = u'passive=no'
-        yield AttributeGenerator.createUnicodeAttribute(field)
-            
-        for triple in candcFeatures.relationTriples:
-            field = 'triple=' + '|'.join(triple)
-            yield AttributeGenerator.createUnicodeAttribute(field)
-            
-        for relation, targets in candcFeatures.relationMap.items():
-            for target in targets:
-                field = '%s=%s' % (unicode(relation), target)
-                yield AttributeGenerator.createUnicodeAttribute(field)
-                
     @staticmethod
-    def yieldPositionAttributes(sentence):
-        for variable, value in vars(sentence).items():
-            if variable not in ('corescLabel', 'content'):
-                field = u'%s=%s' % (variable, value)
-                yield AttributeGenerator.createUnicodeAttribute(field)
+    def yieldPositionAttributes(featuresAllowed, sentence):
+        if 'positions' in featuresAllowed:
+            for variable, value in vars(sentence).items():
+                if variable not in ('corescLabel', 'content'):
+                    field = u'%s=%s' % (variable, value)
+                    yield AttributeGenerator.createUnicodeAttribute(field)
 
 class Trainer:
     class PrintingTrainer(crfsuite.Trainer):
@@ -121,22 +138,32 @@ class Trainer:
         trainer.train(modelPath, -1)
     
 class Tagger:
-    def __init__(self, modelpath):
+    def __init__(self, modelpath, ngramfile):
         self.tagger = crfsuite.Tagger()
         self.tagger.open(modelpath)
         logger.info('model loaded')
         self.candcClient = SoapClient()
+
+        self.features =  ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
+
+        with open(ngramfile, 'rb') as f:
+                self.ngrams = cPickle.load(f)
+                self.ngrams['unigram'] = avl.new(self.ngrams['unigram'])
+                self.ngrams['bigram']  = avl.new(self.ngrams['bigram'])
         
     def getSentenceLabelsWithProbabilities(self, doc):
         itemSequence = crfsuite.ItemSequence()
+
+        ngramFilter = lambda l, n: n in self.ngrams[l]
+
         for sentence in doc.yieldSentences():
             logger.debug('sentence: %s', sentence.content.encode('ascii', 'ignore'))
             item = crfsuite.Item()
             candcFeatures = self.candcClient.getFeatures(sentence.content)
-            for candcAttrib in AttributeGenerator.yieldCandcAttributes(candcFeatures):
+            for candcAttrib in AttributeGenerator.yieldCandcAttributes(self.features, candcFeatures, ngramFilter):
                 logger.debug('parser feature: %s', candcAttrib.attr)
                 item.append(candcAttrib)
-            for positionAttrib in AttributeGenerator.yieldPositionAttributes(sentence):
+            for positionAttrib in AttributeGenerator.yieldPositionAttributes(self.features, sentence):
                 logger.debug('position feature: %s', positionAttrib.attr)
                 item.append(positionAttrib)
             itemSequence.append(item)
@@ -152,7 +179,8 @@ class Tagger:
 
 
 def runTagger(path):
-    tagger = Tagger('/home/james/tmp/no.model')
+    tagger = Tagger('/home/james/tmp/combined/raw/model_fold_0.model', 
+            '/home/james/tmp/combined/raw/cachedFeatures/ngrams_fold_0.pickle')
     parser = SciXML()
     doc = parser.parse(path)
     labels, probabilites = tagger.getSentenceLabelsWithProbabilities(doc)
@@ -161,8 +189,7 @@ def runTagger(path):
             
 if __name__ == '__main__':
     logging.basicConfig()
-    logger = logging.getLogger('crf')
-    logger.setLevel(logging.DEBUG)
+
     #Trainer().trainModel('/home/james/tmp/no.model')
     runTagger('/home/james/b103844n.xml')
     

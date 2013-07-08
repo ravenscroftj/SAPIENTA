@@ -5,6 +5,7 @@ import logging
 import os
 import crfsuite
 import cPickle
+import csv
 
 from multiprocessing import Pool, Lock
 
@@ -17,7 +18,7 @@ def train_and_test(fixture):
     """This method creates a trainer and trains and evaluates a crf model
     """
 
-    cacheDir, corpusDir, foldNo, testFiles, trainFiles, lock = fixture
+    features, cacheDir, corpusDir, foldNo, testFiles, trainFiles, lock = fixture
 
     ngramCacheFile = os.path.join(cacheDir, "ngrams_fold_%d.pickle" % foldNo)
     
@@ -29,7 +30,7 @@ def train_and_test(fixture):
     logger.addHandler(logging.FileHandler(os.path.join(corpusDir, "logs", "fold_%d.log" % foldNo)))
 
     #construct a sapienta trainer object
-    trainer = SAPIENTATrainer(cacheDir, modelPath, ngramCacheFile, logger)
+    trainer = SAPIENTATrainer(features, cacheDir, modelPath, ngramCacheFile, logger)
 
     if os.path.exists(modelPath):
         logger.warn("Not regenerating model for fold %d. "
@@ -56,7 +57,7 @@ class CrossValidationTrainer:
 
     #------------------------------------------------------------------------------------------------
 
-    def train_cross_folds( self, foldsFile, corpusDir):
+    def train_cross_folds( self, foldsFile, corpusDir, features):
         """Train SAPIENTA on folds described in foldsFile."""
 
         from sapienta.ml.folds import get_folds
@@ -86,13 +87,17 @@ class CrossValidationTrainer:
     
         fixtures = []
 
+        #TEMPORARY THING THAT STOPS LOOKING AFTER 3 FOLDS
+        #self.folds = self.folds[:1]
+
         for f, fold in enumerate(self.folds):
 
             testFiles = []
             sents = 0
             
             for filedict in fold:
-                fname = os.path.join(corpusDir, filedict['filename'] + "_mode2." + filedict['annotator'] + ".xml")
+                fname = os.path.join(corpusDir, filedict['filename'] + "_mode2." + 
+                        filedict['annotator'] + ".xml")
 
                 sents += int(filedict['total_sentence'])
 
@@ -107,34 +112,43 @@ class CrossValidationTrainer:
             #calculate which files to use for training
             trainFiles = [file for file in allFiles if file not in testFiles]
 
-            fixtures.append( ( self.cacheDir, self.corpusDir, f, testFiles, trainFiles,None))
+            fixtures.append( ( features, self.cacheDir, self.corpusDir, f, testFiles, trainFiles,None))
             
 
         p = Pool()
         
         #run the training
         results = p.map(train_and_test, fixtures)
+        #results = map(train_and_test, fixtures)
 
         #calculate and show results for folds
-        for r in results:
-            self.calcPrecRecall(*r)
+        for f,r in enumerate(results):
+            self.calcPrecRecall(f,*r)
 
         #now show total microaverages for models
         self.calcMicroAverages()
 
     #------------------------------------------------------------------------------------------------
 
-    def calcPrecRecall(self, trueLabels, predictedLabels, probabilities):
+    def calcPrecRecall(self, fold, trueLabels, predictedLabels, probabilities):
         """Calculate precision and recall for sequences of true and predicted labels
         """
+
         labels = set(trueLabels).union(set(predictedLabels))
         tp = {}
         fp = {}
         fn = {}
+
+        f = open(os.path.join(self.corpusDir, "results_fold_%d.csv" %
+        fold),'wb')
+
+        csvw = csv.writer(f)
+
         for label in labels:
             tp[label] = fp[label] = fn[label] = 0
         
         predictedZip = zip(predictedLabels, probabilities)
+        
         self.logger.info("True label, Predicted Label, Probability")
 
         for true, predictedZip in zip(trueLabels, predictedZip):
@@ -158,17 +172,40 @@ class CrossValidationTrainer:
             else:
                 prec = tp[label] / (tp[label] + fp[label])
                 rec = tp[label] / (tp[label] + fn[label])
+            
+            if (prec + rec) > 0:
+                fm = (2 * prec * rec ) / (prec + rec)
+            else:
+                fm = 0
 
             self.logger.info('prec: %d tp / (%d tp + %d fp) = %f', tp[label], tp[label], fp[label], prec)
             self.logger.info('rec: %d tp / (%d tp + %d fn) = %f', tp[label], tp[label], fn[label], rec)
-            self.logger.info('F-measure: %f',(2 * prec * rec) / (prec + rec))
+            self.logger.info('F-measure: %f',fm)
+
+            csvw.writerow([label, prec, rec, fm])
+
+        totalSentences = sum(tp.values()) + sum(fp.values())
+
+        rightpc = sum(tp.values()) * 100 /  totalSentences
+        wrongpc = sum(fp.values()) * 100 /  totalSentences
+        #write the accuracy
+        csvw.writerow(["Classifier Accuracy", rightpc, wrongpc ])
+        
+        #close the csv file
+        f.close()
+
 
     #------------------------------------------------------------------------------------------------
 
     def calcMicroAverages(self):
         """Calculate microaverages for precision recall and f-measure across all 9 folds
         """
-        
+
+
+        f = open(os.path.join(self.corpusDir, "micro_all.csv"),'wb')
+
+        csvw = csv.writer(f)
+
         for label in self.accum_tp:
             self.logger.info(label)
             if self.accum_tp[label] == 0:
@@ -178,9 +215,27 @@ class CrossValidationTrainer:
                 prec = self.accum_tp[label] / (self.accum_tp[label] + self.accum_fp[label])
                 rec = self.accum_tp[label] / (self.accum_tp[label] + self.accum_fn[label])
 
+            if (prec + rec) > 0:
+                fm = (2 * prec * rec ) / (prec + rec)
+            else:
+                fm = 0
+
             self.logger.info('prec: %d tp / (%d tp + %d fp) = %f', self.accum_tp[label], self.accum_tp[label], self.accum_fp[label], prec)
             self.logger.info('rec: %d tp / (%d tp + %d fn) = %f', self.accum_tp[label], self.accum_tp[label], self.accum_fn[label], rec)
-            self.logger.info('F-measure: %f',(2 * prec * rec) / (prec + rec))
+            self.logger.info('F-measure: %f',fm)
+
+            #write csv result
+            csvw.writerow([label, prec, rec, fm])
+        
+        totalSentences = sum(self.accum_tp.values()) + sum(self.accum_fp.values())
+        rightpc = sum(self.accum_tp.values()) * 100 /  totalSentences
+        wrongpc = sum(self.accum_fp.values()) * 100 /  totalSentences
+        #write the accuracy
+        csvw.writerow(["Classifier Accuracy", rightpc, wrongpc ])
+        
+        #close the writer
+        f.close()
+
     
 #------------------------------------------------------------------------------------------------
 
@@ -188,7 +243,9 @@ def main():
     """Main entrypoint for cross validation training script"""
 
     t = CrossValidationTrainer()
-    t.train_cross_folds("/home/james/tmp/foldTable.csv", "/home/james/tmp/combined/raw")
+    features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
+    #features = ['ngrams']
+    t.train_cross_folds("/home/james/tmp/foldTable.csv", "/home/james/tmp/combined/raw", features)
 
 
 if __name__ == "__main__":
