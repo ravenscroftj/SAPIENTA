@@ -242,10 +242,30 @@ class CrossValidationTrainer:
 def main():
     """Main entrypoint for cross validation training script"""
 
+    from argparse import ArgumentParser
+    
+    a = ArgumentParser(description='Cross-validate sentence annotator models')
+    
+    a.add_argument('--features', dest='features', action='store', default=None,
+            help="List of features used in training separated by commas.")
+
+    a.add_argument('foldTable', metavar='fold_table_path', type=str,
+            help='')
+
+    a.add_argument('--corpusdir', dest='corpusdir', action='store',
+            help='Directory in which xml papers are found and cached data can be stored.')
+
+
+    
+
     t = CrossValidationTrainer()
+    
+    args = a.parse_args()
+
+
     features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
-    #features = ['ngrams']
     t.train_cross_folds("/home/james/tmp/foldTable.csv", "/home/james/tmp/combined/raw", features)
+
 
 
 if __name__ == "__main__":
