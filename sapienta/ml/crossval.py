@@ -242,6 +242,7 @@ class CrossValidationTrainer:
 def main():
     """Main entrypoint for cross validation training script"""
 
+    import sys
     from argparse import ArgumentParser
     
     a = ArgumentParser(description='Cross-validate sentence annotator models')
@@ -252,29 +253,53 @@ def main():
     a.add_argument('foldTable', metavar='fold_table_path', type=str,
             help='')
 
-    a.add_argument('--corpusdir', dest='corpusdir', action='store',
+    a.add_argument('--corpusdir', dest='corpusdir', action='store', default=None,
             help='Directory in which xml papers are found and cached data can be stored.')
 
 
     
-
     t = CrossValidationTrainer()
     
     args = a.parse_args()
 
 
-    features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
-    t.train_cross_folds("/home/james/tmp/foldTable.csv", "/home/james/tmp/combined/raw", features)
+    all_features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
+
+    if args.features == None:
+        logging.info("Using all features for training: %s", ",".join(all_features))
+        features = all_features
+    else:
+        for f in args.features.split(","):
+            if f not in all_features:
+                logging.error("Unknown feature: %s, valid features are %s", f, ",".join(all_features))
+                sys.exit(1)
+
+        features = args.features
+
+    #make sure the fold table exists
+    if not os.path.isfile(args.foldTable):
+        logging.error("Invalid fold table given %s", args.foldTable)
+        sys.exit(1)
+
+    if args.corpusdir != None:
+        corpusdir = args.corpusdir
+    else:
+        logging.warn("No corpusdir specified, using fold table directory")
+        corpusdir = os.path.dirname(args.foldTable)
+
+    if not os.path.isdir(corpusdir):
+        logging.error("Invalid corpus dir %s, specify an existing directory", corpusdir)
+        sys.exit(1)
+
+    
+    t.train_cross_folds(args.foldTable, corpusdir, features)
+    #t.train_cross_folds("/home/james/tmp/foldTable.csv", "/home/james/tmp/combined/raw", features)
 
 
 
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
-    
     rootlog = logging.getLogger()
-
-
-
     main()
         
