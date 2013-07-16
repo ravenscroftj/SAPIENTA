@@ -1,12 +1,40 @@
 """A set of tools and utilities for producing SVMLight compatible sentence data
 """
 
+from sapienta.ml.train import SAPIENTATrainer
+
+class SVMLightTrainer(SAPIENTATrainer):
+    """SAPIENTA trainer that produces SVMLight formatted training/testing data
+    """
+
+
+    def train(self, trainfiles):
+        self.preprocess(trainfiles)
+
+        encoder = SVMLightEncoder(self.ngrams)
+
+        all_sents = {}
+
+        for file in trainfiles:
+            sents = self.extractFeatures(file)
+
+            for sent in sents:
+                label = sent.corescLabel
+                encoded = encoder.encodeSentence(sent.candcFeatures)
+
+                if not label in all_sents:
+                    all_sents[label] = []
+
+                all_sents[label].append(encoded)
+
+            
+            
+#---------------------------------------------------------------------------------------
+
 class SVMLightEncoder:
 
+    def __init__(self, ngrams):
 
-    def __init__(self, ngrams, classes):
-
-        self.classes = sorted(classes)
         self.ngrams = ngrams
 
     def encodeSentence(self, candcSentence):
@@ -54,8 +82,10 @@ if __name__ == "__main__":
     for sent in sents:
         cats.append(str(sent.corescLabel))
 
-    svmenc = SVMLightEncoder(ngrams, list(set(cats)))
+    svmenc = SVMLightEncoder(ngrams, )
+
+    classes = sorted(list(set(cats)))
 
     for sent in sents:
-        print svmenc.getCatID(sent.corescLabel), svmenc.encodeSentence(sent.candcFeatures)
+        print classes.index(str(sent.corescLabel)) + 1, svmenc.encodeSentence(sent.candcFeatures)
 

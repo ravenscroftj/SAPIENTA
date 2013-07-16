@@ -9,7 +9,8 @@ import csv
 
 from multiprocessing import Pool, Lock
 
-from sapienta.ml.train import CRFTrainer as Trainer
+from sapienta.ml.svmlight import SVMLightTrainer as Trainer
+#from sapienta.ml.train import CRFTrainer as Trainer
 
 from collections import Counter
 
