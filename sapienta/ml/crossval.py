@@ -118,8 +118,8 @@ class CrossValidationTrainer:
         p = Pool()
         
         #run the training
-        results = p.map(train_and_test, fixtures)
-        #results = map(train_and_test, fixtures)
+        #results = p.map(train_and_test, fixtures)
+        results = map(train_and_test, fixtures)
 
         #calculate and show results for folds
         for f,r in enumerate(results):

@@ -82,8 +82,6 @@ class Features:
             #lower case all the things
             unigrams[i] = unigrams[i].lower()
 
-            #split
-
             #filter out digits in favour of at symbols
             chars = [x if not x.isdigit() else '@@@' for x in unigrams[i]]
             unigrams[i] = "".join(chars)
@@ -105,7 +103,7 @@ class Features:
 
 
         #filter out specific numbers and parenthesis in the unigrams, bigrams
-        #bigrams = map(self.escapePunctuation, bigrams)
+        bigrams = map(self.escapePunctuation, bigrams)
 
         return unigrams, bigrams, trigrams
 
