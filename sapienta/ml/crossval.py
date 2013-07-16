@@ -9,7 +9,7 @@ import csv
 
 from multiprocessing import Pool, Lock
 
-from sapienta.ml.train import SAPIENTATrainer
+from sapienta.ml.train import CRFTrainer as Trainer
 
 from collections import Counter
 
@@ -30,7 +30,7 @@ def train_and_test(fixture):
     logger.addHandler(logging.FileHandler(os.path.join(corpusDir, "logs", "fold_%d.log" % foldNo)))
 
     #construct a sapienta trainer object
-    trainer = SAPIENTATrainer(features, cacheDir, modelPath, ngramCacheFile, logger)
+    trainer = Trainer(features, cacheDir, modelPath, ngramCacheFile, logger)
 
     if os.path.exists(modelPath):
         logger.warn("Not regenerating model for fold %d. "
@@ -118,8 +118,8 @@ class CrossValidationTrainer:
         p = Pool()
         
         #run the training
-        results = p.map(train_and_test, fixtures)
-        #results = map(train_and_test, fixtures)
+        #results = p.map(train_and_test, fixtures)
+        results = map(train_and_test, fixtures)
 
         #calculate and show results for folds
         for f,r in enumerate(results):
