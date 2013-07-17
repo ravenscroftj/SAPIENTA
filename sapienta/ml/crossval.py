@@ -89,7 +89,7 @@ class CrossValidationTrainer:
         fixtures = []
 
         #TEMPORARY THING THAT STOPS LOOKING AFTER 3 FOLDS
-        #self.folds = self.folds[:1]
+        self.folds = self.folds[:1]
 
         for f, fold in enumerate(self.folds):
 
@@ -139,6 +139,8 @@ class CrossValidationTrainer:
         tp = {}
         fp = {}
         fn = {}
+
+        print labels
 
         f = open(os.path.join(self.corpusDir, "results_fold_%d.csv" %
         fold),'wb')
