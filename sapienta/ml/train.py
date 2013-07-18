@@ -51,7 +51,6 @@ class FeatureExtractorBase:
         from sapienta.ml.docparser import SciXML
         from sapienta.ml.candc import SoapClient
 
-
         cachedName = os.path.join(self.cacheDir, os.path.basename(file))
 
         if os.path.exists(cachedName):

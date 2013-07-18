@@ -42,7 +42,7 @@ class CRFAnnotator(FeatureExtractorBase):
 
         self.tagger.set(items)
         
-        return self.tagger.viterbi()
+        return list(self.tagger.viterbi())
 
 #------------------------------------------------------------------------------------------------
 def main():

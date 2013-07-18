@@ -93,48 +93,32 @@ class BaseAnnotator(object):
 
 
 #MODEL_PATH = str(os.path.join(config['MODELS_DIR'], "a.model"))
-class LocalPythonAnnotator:
+class LocalPythonAnnotator(BaseAnnotator):
+
+    def __init__(self):
+        from sapienta.ml.annotate import CRFAnnotator
+        from tempfile import mkdtemp
+
+        cacheDir = mkdtemp()
+        modelFile = config['SAPIENTA_MODEL_FILE']
+        ngramsFile = config['SAPIENTA_NGRAMS_FILE']
+
+        features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
+
+
+        self.annotator = CRFAnnotator(modelFile, ngramsFile, cacheDir, features)
+
     #------------------------------------------------------------------------- 
     def annotate(self, filename, outfilename):
-        """This is still a WIP, need python SAPIENTA first"""
-        print MODEL_PATH
-        tagger = Tagger(MODEL_PATH)
-        parser = SciXML()
-        doc = parser.parse(filename)
-        labels, probabilites = tagger.getSentenceLabelsWithProbabilities(doc)
-        
-        with open(filename,'r') as fin:
-            self.indoc = minidom.parse(filename)
+        """Use Python version of sapienta to annotate the paper"""
+        BaseAnnotator.annotate(self, filename, outfilename)
+        labels = self.annotator.annotate(filename)
 
-        sentmap = {}
-
-        #get sentences by id
-        for s in self.indoc.getElementsByTagName("s"):
-            if(s.firstChild.nodeType == self.indoc.ELEMENT_NODE and 
-                s.firstChild.localName == "annotationART"):
-                
-                sentmap[s.getAttribute("sid")] = s.firstChild
-
-        usedTypes = {}
-
-        #modify each valid annotation with correct type
-        for key,label in labels:
-            if(sentmap.has_key(key)):
-                el = sentmap[key]
-                el.setAttribute("type", label)
-
-                if not(usedTypes.has_key(label)):
-                    usedTypes[label] = 0
-
-                usedTypes[label] += 1
-
-                el.setAttribute("conceptID", label+str(usedTypes[label]))
-                
-        #write the output document
-        print "Writing new xml doc to %s" % outfilename
+        self._annotateXML(labels)
 
         with codecs.open(outfilename,'w', encoding='utf-8') as f:
-            self.indoc.writexml(f)
+            self.doc.writexml(f)
+
 
     #-------------------------------------------------------------------------
 
@@ -237,7 +221,7 @@ class RemoteAnnotator(BaseAnnotator, CURLUploader):
 
 
 #Set annotator to remote annotator for now
-Annotator = LocalPerlAnnotator
+Annotator = LocalPythonAnnotator
 
 if __name__ == "__main__":
     r = Annotator()
