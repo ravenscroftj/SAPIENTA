@@ -27,9 +27,8 @@ class CRFAnnotator(FeatureExtractorBase):
                 len(self.ngrams['bigram']), len(self.ngrams['unigram']))
 
         #load crfsuite
-        tagger = crfsuite.Tagger()
-        tagger.open(self.modelFile)
-        tagger.set(items)
+        self.tagger = crfsuite.Tagger()
+        self.tagger.open(self.modelFile)
         
 
     #------------------------------------------------------------------------------------------------
@@ -41,8 +40,9 @@ class CRFAnnotator(FeatureExtractorBase):
         
         items, labels = self.crfdataForFeatures(sents)
 
-
-        return tagger.viterbi()
+        self.tagger.set(items)
+        
+        return self.tagger.viterbi()
 
 #------------------------------------------------------------------------------------------------
 def main():
@@ -76,7 +76,7 @@ def main():
     os.path.join(os.path.dirname(args.paperFile), "cachedFeatures"), 
     features)
 
-    anno.annotate(args.paperFile)
+    print args.paperFile,":",">".join(anno.annotate(args.paperFile))
 
 if __name__ == "__main__":
     
