@@ -171,6 +171,12 @@ class NgramBuilder:
             glue123 = self.trigrams[ngram]['total_frequency'] / self.totalTris
             bi01 = " ".join(words[:2])
             bi02 = " ".join(words[1:])
+
+
+            print ngram
+            b1 = self.bigrams[bi01]
+            u1 = self.unigrams[words[2]]
+
             glue01 = (self.bigrams[bi01]['total_frequency'] * 
                         self.unigrams[words[2]]['total_frequency'] 
                         / self.totalBis * self.totalUnis)

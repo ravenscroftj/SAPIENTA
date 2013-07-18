@@ -230,11 +230,11 @@ class SciXML:
     
     def __init__(self):
         self.doc = Document()
-        self.inHeader = self.inParagraph = self.inAnnotation = False
+        self.inSent = self.inHeader = self.inParagraph = self.inAnnotation = False
         self.currHeader = self.currParagraph = self.currSentence = None
         
     def startElement(self, name, attrs):
-        if name == 'ABSTRACT':
+        if (name == 'ABSTRACT') or (name == 'abstract'):
             header = Header()
             header.name = 'Abstract'
             self.doc.addHeader(header)
@@ -243,7 +243,7 @@ class SciXML:
             para = Paragraph()
             self.currHeader.addParagraph(para)
             self.currParagraph = para
-        elif name == 'HEADER':
+        elif (name == 'HEADER') or (name == 'title'):
             self.inHeader = True
             header = Header()
             self.doc.addHeader(header)
@@ -253,30 +253,46 @@ class SciXML:
             para = Paragraph()
             self.currHeader.addParagraph(para)
             self.currParagraph = para
-        elif name == 'annotationART':
+        elif name =='s':
             if self.currParagraph == None:
                 return # skipping annotation in title
-            self.inAnnotation = True
-            label = attrs['type']
-            sent = Sentence(label)
+
+            self.inSent = True
+            sent = Sentence()
             self.currParagraph.addSentence(sent)
             self.currSentence = sent
+
+
+        elif (name == 'annotationART') or (name=='CoreSc1'):
+
+            if not self.inSent:
+                return
+
+            self.inAnnotation = True
+            label = attrs['type']
+            self.currSentence.corescLabel = attrs['type']
+        
+
         elif name == 'REF' and self.inAnnotation:
             self.currSentence.incrementCitations()
             
     def endElement(self, name):
-        if name == 'HEADER':
+        if (name == 'HEADER') or (name=='title'):
             self.inHeader = False
-        elif name == 'P':
+            
+        elif name.lower() == 'p':
             self.inParagraph = False
+        elif name =='s':
+            self.inSent = False
         elif name == 'annotationART':
             self.inAnnotation = False
     
     def charData(self, data):
         if self.inHeader:
             self.currHeader.name += data
-        elif self.inAnnotation:
+        elif self.inSent:
             self.currSentence.addText(data)
+
     
     def parse(self, path):
         parser = xml.parsers.expat.ParserCreate()
