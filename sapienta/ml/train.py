@@ -21,11 +21,27 @@ class FeatureExtractorBase:
     """This class has some reusable functions for extracting features
     """
 
-    def __init__(self, modelFile, ngramsFile, cacheDir, features):
+    def __init__(self, modelFile, ngramsFile, cacheDir, features, logger=None,
+    lock=None):
         self.modelFile = modelFile
         self.ngramCacheFile = ngramsFile
         self.cacheDir = cacheDir
         self.features = features
+
+
+        if logger == None:
+            self.logger = logging.getLogger(__name__)
+        else:
+            self.logger = logger
+
+
+        #lock used for multithreaded training only
+        #if we're not multithreaded we use a "dummy" lock
+
+        if lock != None:
+            self.lock  = lock
+        else:
+            self.lock = DummyLock()
 
     #------------------------------------------------------------------------------------------------
     
@@ -112,21 +128,8 @@ class SAPIENTATrainer(FeatureExtractorBase):
         """Create a sapienta trainer object"""
 
         FeatureExtractorBase.__init__(self, modelFile, ngramCacheFile,
-        cacheDir, features)
+        cacheDir, features, logger, lock)
 
-        if logger == None:
-            self.logger = logging.getLogger(__name__)
-        else:
-            self.logger = logger
-
-
-        #lock used for multithreaded training only
-        #if we're not multithreaded we use a "dummy" lock
-
-        if lock != None:
-            self.lock  = lock
-        else:
-            self.lock = DummyLock()
 
     #------------------------------------------------------------------------------------------------
 
