@@ -27,6 +27,8 @@ class SVMLightTrainer(SAPIENTATrainer):
                 label = sent.corescLabel
                 encoded = encoder.encodeSentence(sent.candcFeatures)
 
+                encoded = { x:1 for x in encoded}
+
                 if not label in all_sents:
                     all_sents[label] = []
 
@@ -91,12 +93,14 @@ class SVMLightTrainer(SAPIENTATrainer):
             all_labs = sorted(list(set(labels)))
 
             #do the prediction
-            labels = [ (all_labs.index(l)+1) for l in labels]
+            num_labels = [ (all_labs.index(l)+1) for l in labels]
             print labels 
-            p_labs, p_acc, p_vals = svm_predict(labels, feats, m)
+            p_labs, p_acc, p_vals = svm_predict(num_labels, feats, m)
+
+
 
             allTrueLabels += labels
-            allPredictedLabels += p_labs
+            allPredictedLabels += [ labels[int(round(i))] for i in p_labs]
 
         return allTrueLabels, allPredictedLabels, [1] * len(allPredictedLabels)
 
