@@ -221,7 +221,17 @@ class RemoteAnnotator(BaseAnnotator, CURLUploader):
 
 
 #Set annotator to remote annotator for now
-Annotator = LocalPythonAnnotator
+
+if config.has_key('SAPIENTA_ANNOTATE_METHOD'):
+    
+    if config['SAPIENTA_ANNOTATE_METHOD'] == 'PERL':
+        Annotator = LocalPerlAnnotator
+    else:
+    #elif config['SAPIENTA_ANNOTATE_METHOD'] == 'PYTHON':
+        Annotator = LocalPythonAnnotator
+else:
+    Annotator = LocalPythonAnnotator
+
 
 if __name__ == "__main__":
     r = Annotator()

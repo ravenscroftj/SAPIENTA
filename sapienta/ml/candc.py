@@ -28,7 +28,10 @@ import os
 import re
 
 bnc = BncFilter()
-wsdlPath = 'file:/home/james/tmp/ccg_binding.wsdl'
+
+#figure out where the wsdl file is
+wsdlPath = 'file:' + os.path.join(os.path.dirname(__file__), "ccg_binding.wsdl")
+#wsdlPath = 'file:/home/james/tmp/ccg_binding.wsdl'
 
 
 logger = logging.getLogger(__name__)
