@@ -51,7 +51,7 @@ class SVMLightTrainer(SAPIENTATrainer):
                 labelList.append(catnum)
                 featList.append(sent)
         
-        m = svm_train(labelList, featList, '-h 0 -s 3 -c 5')
+        m = svm_train(labelList, featList, '-h 0 -c 5')
 
         svm_save_model(self.modelFile,m)
 
