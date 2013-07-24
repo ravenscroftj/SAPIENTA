@@ -59,6 +59,8 @@ class SAPIENTATrainer:
 
             ngrams = NgramBuilder()
 
+            
+
             for file in filenames:
 
                 #extract features (if they're not already)

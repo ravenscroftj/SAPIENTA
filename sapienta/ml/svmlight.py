@@ -8,6 +8,8 @@ from sapienta.ml.train import SAPIENTATrainer
 
 from collections import Counter
 
+ALL_CORESCS = ["Obj","Res","Goa","Mot","Hyp","Met","Bac","Exp","Con","Obs","Mod"]
+
 class SVMLightTrainer(SAPIENTATrainer):
     """SAPIENTA trainer that produces SVMLight formatted training/testing data
     """
@@ -19,9 +21,15 @@ class SVMLightTrainer(SAPIENTATrainer):
         encoder = SVMLightEncoder(self.ngrams)
 
         all_sents = {}
+        
+        f = open("features.svm", 'wb')
 
         for file in trainfiles:
+
             sents = self.extractFeatures(file)
+
+            encoder.writeSentences(sents, f)
+
             self.logger.info("Encoding features from %s as SVMLight", file)
             for sent in sents:
                 label = sent.corescLabel
@@ -36,10 +44,12 @@ class SVMLightTrainer(SAPIENTATrainer):
 
             self.logger.info("Currently have %d sentences in %d classes", sum(map(len,all_sents.values())), len(all_sents))
 
+        #close the features file
+        f.close()
 
         self.logger.info("Training SVM Model...")
 
-        cats = sorted(all_sents.keys())
+        cats = sorted(ALL_CORESCS)
 
         labelList = []
         featList  = []
@@ -80,6 +90,8 @@ class SVMLightTrainer(SAPIENTATrainer):
         for doc in testFiles:
             sents = self.extractFeatures(doc)
 
+            #encoder.writeSentences(sents)
+
             labels = []
             feats  = []
 
@@ -90,23 +102,21 @@ class SVMLightTrainer(SAPIENTATrainer):
                 labels.append(label)
                 feats.append(encoded)
 
-            all_labs = sorted(list(set(labels)))
+            all_labs = sorted(ALL_CORESCS)
 
             #do the prediction
             num_labels = [ (all_labs.index(l)+1) for l in labels]
-            print labels 
             p_labs, p_acc, p_vals = svm_predict(num_labels, feats, m)
 
-
-
             allTrueLabels += labels
-            allPredictedLabels += [ labels[int(round(i))] for i in p_labs]
+            allPredictedLabels += [ labels[int(i)] for i in p_labs]
 
         return allTrueLabels, allPredictedLabels, [1] * len(allPredictedLabels)
 
 #---------------------------------------------------------------------------------------
 
 class SVMLightEncoder:
+    """Given a feature list, map actual feature values to SVMLight indices"""
 
     def __init__(self, ngrams):
 
@@ -132,6 +142,27 @@ class SVMLightEncoder:
     
         #return " ".join([ ("%d:%d" % (f, sentFeatures[f]) )  for f in sorted(sentFeatures.keys())])
 
+    def writeSentences(self, sents, modfile):
+        """Write a set of sentence features to an SVMLight output stream
+        """
+        labelList = []
+        featList  = []
+
+
+        cats = sorted(ALL_CORESCS)
+
+        for sent in sents:
+            label = sent.corescLabel
+            encoded = self.encodeSentence(sent.candcFeatures)
+
+            encoded = { x:1 for x in encoded}
+            catnum = cats.index(label) + 1
+            
+            labelList.append(catnum)
+            featList.append(encoded)
+
+        for i in range(0, len(labelList)):
+            modfile.write("%d %s\n" % (labelList[i], " ".join([ "%d:%d" % (f+1, featList[i][f]) for f in sorted(featList[i]) ])))
 
 
 if __name__ == "__main__":
@@ -146,7 +177,6 @@ if __name__ == "__main__":
 
     with open("/home/james/tmp/combined/raw/cachedFeatures/b105514n_mode2.Andrew.xml") as f:
         sents = cPickle.load(f)
-
 
 
     cats = []
