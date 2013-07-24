@@ -61,13 +61,10 @@ class SVMLightTrainer(SAPIENTATrainer):
                 labelList.append(catnum)
                 featList.append(sent)
         
-        #m = svm_train(labelList, featList, '-h 0 -c 5')
+        m = svm_train(labelList, featList, '-t 0 -b 1')
 
-        #svm_save_model(self.modelFile,m)
+        svm_save_model(self.modelFile,m)
 
-        with open("features.svm", 'wb') as modfile:
-            for i in range(0, len(labelList)):
-                modfile.write("%d %s\n" % (labelList[i], " ".join([ "%d:%d" % (f+1, featList[i][f]) for f in sorted(featList[i]) ])))
 
     def testModel( self, testFiles):
             

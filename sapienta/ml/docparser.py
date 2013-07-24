@@ -40,10 +40,7 @@ class Document:
         Simply return the header/section number, starting from 1, maximum value is 10.
         '''
         paragraphNumber = headerIndex + 1
-        if paragraphNumber > 10:
-            return 10
-        else:
-            return paragraphNumber
+        return min(paragraphNumber, 10)
         
     def getSentenceLength(self, sentence):
         '''
