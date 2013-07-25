@@ -44,15 +44,6 @@ Remember that you will need to run the `source env/bin/activate` command each
 time you wish to interact with an instance of SAPIENTA installed inside a
 virtualenv each time you open a new terminal.
 
-### Installation with superuser access
-
-If you wish to install SAPIENTA and its dependencies as system-wide site
-packages, you can run the following command (as root):
-
-    # git clone git@github.com:ravenscroftj/SAPIENTA.git
-    # python setup.py install
-
-This should set up SAPIENTA in your default python installation path.
 
 ## Configuration
 
@@ -82,7 +73,7 @@ use of local processing.
 Typical usage of pdfxconv to convert a PDF to an annotated PubMed DTD paper
 might look like the following:
 
-    $ pdfconv -a myarticle.pdf
+    $ pdfxconv -a myarticle.pdf
 
 You can also batch process a set of files:
 
