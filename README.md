@@ -19,30 +19,7 @@ the installation process illustrated below.
 
 ## Installation
 
-Installation of SAPIENTA is simple although if you want to use it with the Perl
-annotator it does require [some extra configuration](https://github.com/ravenscroftj/SAPIENTA/wiki/PerlConfiguration). There are two possible installation routes:
-
-
-### Installation inside virtualenv (recommended)
-
-It is recommended that you build SAPIENTA inside a
-[virtualenv](http://www.virtualenv.org/en/latest/) environment. This avoids
-conflicting dependencies between Python applications and allows you to install
-the necessary dependency packages without superuser access on the machine in
-question.
-
-It is recommended that a virtualenv is set up in the top level of the project directory.
-An example installation procedure with virtualenv is as follows:
-    
-    ~ $ git clone git@github.com:ravenscroftj/SAPIENTA.git
-    ~ $ cd SAPIENTA
-    ~/SAPIENTA $ virtualenv env
-    ~/SAPIENTA $ source env/bin/activate
-    (env) ~/SAPIENTA $ python setup.py install
-    
-Remember that you will need to run the `source env/bin/activate` command each
-time you wish to interact with an instance of SAPIENTA installed inside a
-virtualenv each time you open a new terminal.
+Please Read the [INSTALL](install.md) file for notes on how to compile and install SAPIENTA for your system.
 
 
 ## Configuration
