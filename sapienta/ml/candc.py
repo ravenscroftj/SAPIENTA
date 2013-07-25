@@ -30,7 +30,7 @@ import re
 bnc = BncFilter()
 
 #figure out where the wsdl file is
-wsdlPath = 'file:' + os.path.join(os.path.dirname(__file__), "ccg_binding.wsdl")
+wsdlPath = 'file:' + os.path.join(os.path.dirname(__file__), "../../ccg_binding.wsdl")
 #wsdlPath = 'file:/home/james/tmp/ccg_binding.wsdl'
 
 

@@ -20,6 +20,8 @@ setup(
         'sapientaweb   = sapienta:main'
         ]},
 
+    data_files = [('', ['sapienta/ml/ccg_binding.wsdl'])],
+
     author="James Ravenscroft",
     author_email = "ravenscroft@papro.org.uk",
     description = "Toolkit for annotating XML scientific papers with CoreSC labels",
