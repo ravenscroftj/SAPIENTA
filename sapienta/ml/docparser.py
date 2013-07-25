@@ -97,7 +97,30 @@ class Document:
                 for sentence in para.sentences:
                     sentence.corescLabel = predictedLabels[i]
                     i += 1
-                    
+              
+              
+substringToType = {
+       'abstract': 'abstract',
+       'appendix': 'appendix',
+       'acknowledgement': 'appendix',
+       'intro': 'introduction',
+       'background': 'background',
+       'previous': 'background',
+       'model': 'model',
+       'theor': 'theory',
+       'calculation': 'calculation',
+       'computational': 'computational',
+       'experiment': 'experiment',
+       'result': 'result',
+       'method': 'method',
+       'mechanism': 'mechanism',
+       'summar': 'summary',
+       'conclu': 'conclusion',
+       'discuss': 'discussion'
+       }
+
+
+
 class Header:
     def __init__(self):
         self.name = ''
@@ -137,25 +160,6 @@ class Header:
         Try to normalize to one of 14 heading type classes by finding substrings
         (or exact matches for that matter). Two special classes for empty and non-matching.
         '''
-        substringToType = {
-                   'abstract': 'abstract',
-                   'appendix': 'appendix',
-                   'acknowledgement': 'appendix',
-                   'intro': 'introduction',
-                   'background': 'background',
-                   'previous': 'background',
-                   'model': 'model',
-                   'theor': 'theory',
-                   'calculation': 'calculation',
-                   'computational': 'computational',
-                   'experiment': 'experiment',
-                   'result': 'result',
-                   'method': 'method',
-                   'mechanism': 'mechanism',
-                   'summar': 'summary',
-                   'conclu': 'conclusion',
-                   'discuss': 'discussion'
-                   }
         if self.name == '':
             return 'none'
         for subString, htype in substringToType.items():

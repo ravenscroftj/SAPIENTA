@@ -33,7 +33,7 @@ class SVMLightTrainer(SAPIENTATrainer):
             self.logger.info("Encoding features from %s as SVMLight", file)
             for sent in sents:
                 label = sent.corescLabel
-                encoded = encoder.encodeSentence(sent.candcFeatures)
+                encoded = encoder.encodeSentence(sent)
 
                 encoded = { x:1 for x in encoded}
 
@@ -119,26 +119,42 @@ class SVMLightEncoder:
 
         self.ngrams = ngrams
 
-    def encodeSentence(self, candcSentence):
+    def encodeSentence(self, sent):
         """Given a sentence, return svmlight syntax for features within it
         """
 
         baseFeatureIndex = 1
+
+        candcSentence = sent.candcFeatures
         
         sentFeatures = Counter()
+
+        #first, we do absolute location of the sentence within the paper
+        sentFeatures[baseFeatureIndex] = ord(sent.absoluteLocation) - 64
+        baseFeatureIndex += 1
+
+        #next we are concerned with the length of the sentence (A-F -> 1-6)
+        sentFeatures[baseFeatureIndex] = ord(sent.length) - 64
+        baseFeatureIndex += 1
+
+        #now we insert struct-1 i.e. which third of the paper the sentence is in
+        sentFeature[baseFeatureIndex] = ord(sent.locationInHeader) - 64
+        baseFeatureIndex += 1
+
+        #now insert section/header ID
+        sentFeature[baseFeatureIndex] = sent.headerId
+        baseFeatureIndex += 1
 
         for label, ngrams in {'unigram' : candcSentence.unigrams, 'bigram':candcSentence.bigrams }.items():
 
             for ngram in ngrams:
                 idx = self.ngrams[label].index(ngram)
-                sentFeatures[(idx + baseFeatureIndex)] += 1
+                sentFeatures[(idx + baseFeatureIndex)] = 1
 
             baseFeatureIndex += len(ngrams)
 
         return sentFeatures
     
-        #return " ".join([ ("%d:%d" % (f, sentFeatures[f]) )  for f in sorted(sentFeatures.keys())])
-
     def writeSentences(self, sents, modfile):
         """Write a set of sentence features to an SVMLight output stream
         """
@@ -150,16 +166,16 @@ class SVMLightEncoder:
 
         for sent in sents:
             label = sent.corescLabel
-            encoded = self.encodeSentence(sent.candcFeatures)
+            encoded = self.encodeSentence(sent)
 
-            encoded = { x:1 for x in encoded}
+            #encoded = { x:1 for x in encoded}
             catnum = cats.index(label) + 1
-            
+
             labelList.append(catnum)
             featList.append(encoded)
 
         for i in range(0, len(labelList)):
-            modfile.write("%d %s\n" % (labelList[i], " ".join([ "%d:%d" % (f+1, featList[i][f]) for f in sorted(featList[i]) ])))
+            modfile.write("%d %s\n" % (labelList[i], " ".join([ "%d:%d" % (f, featList[i][f]) for f in sorted(featList[i]) ])))
 
 
 if __name__ == "__main__":
