@@ -10,7 +10,8 @@ setup(
             'pycurl>=7.19.0',
             'progressbar>=2.3',
             'text-sentence>=0.14',
-            'pyavl>=1.12'],
+            'pyavl>=1.12',
+            'suds>=0.4'],
 
     entry_points = {"console_scripts" : [
         'pdfxconv = sapienta.tools.pdfxconv:main',
