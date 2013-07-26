@@ -28,7 +28,10 @@ import os
 import re
 
 bnc = BncFilter()
-wsdlPath = 'file:/home/james/tmp/ccg_binding.wsdl'
+
+#figure out where the wsdl file is
+wsdlPath = 'file:' + os.path.join(os.path.dirname(__file__), "../../ccg_binding.wsdl")
+#wsdlPath = 'file:/home/james/tmp/ccg_binding.wsdl'
 
 
 logger = logging.getLogger(__name__)
@@ -82,8 +85,6 @@ class Features:
             #lower case all the things
             unigrams[i] = unigrams[i].lower()
 
-            #split
-
             #filter out digits in favour of at symbols
             chars = [x if not x.isdigit() else '@@@' for x in unigrams[i]]
             unigrams[i] = "".join(chars)
@@ -105,7 +106,7 @@ class Features:
 
 
         #filter out specific numbers and parenthesis in the unigrams, bigrams
-        #bigrams = map(self.escapePunctuation, bigrams)
+        bigrams = map(self.escapePunctuation, bigrams)
 
         return unigrams, bigrams, trigrams
 

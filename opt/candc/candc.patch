@@ -1,0 +1,55 @@
+diff -ur candc-1.00/Makefile.deps candc-new/Makefile.deps
+--- candc-1.00/Makefile.deps	2007-06-08 16:52:54.000000000 +0100
++++ candc-new/Makefile.deps	2013-07-25 10:45:26.795206126 +0100
+@@ -3001,7 +3001,7 @@
+   src/include/parser/printer.h src/include/parser/print_stream.h \
+   src/include/parser/print_factory.h src/include/parser/integration.h \
+   src/include/relations/morpha.h src/api/soap/ccg/soapH.h \
+-  src/api/soap/ccg/soapStub.h ext/include/stdsoap2.h \
++  src/api/soap/ccg/soapStub.h \
+   src/api/soap/ccg/ccg_binding.nsmap src/include/main.h
+ 
+ src/api/soap/ccg/client.o: src/api/soap/ccg/client.cc src/include/base.h src/include/std.h \
+@@ -3014,7 +3014,7 @@
+   src/include/config/config.h src/include/config/options.h \
+   src/include/config/parser.h src/include/config/node.h \
+   src/include/config/option.h src/api/soap/ccg/soapStub.h \
+-  ext/include/stdsoap2.h src/api/soap/ccg/ccg_binding.nsmap \
++  src/api/soap/ccg/ccg_binding.nsmap \
+   src/api/soap/ccg/soapH.h src/include/main.h
+ 
+ src/tests/test_offset_vector.o: src/tests/test_offset_vector.cc \
+diff -ur candc-1.00/Makefile.targets candc-new/Makefile.targets
+--- candc-1.00/Makefile.targets	2007-06-08 17:17:35.000000000 +0100
++++ candc-new/Makefile.targets	2013-07-25 10:44:06.538808271 +0100
+@@ -84,7 +84,7 @@
+   src/lib/tagger/ner.o src/lib/tagger/super.o src/lib/relations/morpha.o
+ 
+ all: $(PROGRAMS)
+-soap: ext/bin/soapcpp2 $(SOAP_PROGRAMS)
++soap: $(SOAP_PROGRAMS)
+ train: $(TRAIN_PROGRAMS)
+ reg: ccg-regression
+ 
+diff -ur candc-1.00/Makefile.unix candc-new/Makefile.unix
+--- candc-1.00/Makefile.unix	2007-06-08 16:52:54.000000000 +0100
++++ candc-new/Makefile.unix	2013-07-25 10:43:23.234593394 +0100
+@@ -27,7 +27,7 @@
+ 
+ SOAP_INC = -Iext/include
+ SOAP_LIBS = $(LIBS) -Lext/lib -lgsoap++
+-SOAP_CPP = ext/bin/soapcpp2
++SOAP_CPP = soapcpp2
+ SOAP_CXXFLAGS = $(CXXFLAGS) $(SOAP_INC)
+ SOAP_LDFLAGS = $(LDFLAGS)
+ 
+diff -ur candc-1.00/src/include/word.h candc-new/src/include/word.h
+--- candc-1.00/src/include/word.h	2007-06-08 16:52:47.000000000 +0100
++++ candc-new/src/include/word.h	2013-07-25 10:39:57.157571454 +0100
+@@ -9,6 +9,7 @@
+ // If LICENCE.txt is not included in this distribution
+ // please email candc@it.usyd.edu.au to obtain a copy.
+ 
++#include <string.h>
+ 
+ namespace NLP {

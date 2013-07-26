@@ -17,20 +17,22 @@ class DummyLock:
     def __exit__(self,exc_type, exc_value, traceback):
         pass
 
-class SAPIENTATrainer:
-    """Base class for training systems and preprocessing features"""
+class FeatureExtractorBase:
+    """This class has some reusable functions for extracting features
+    """
 
-    def __init__(self, features, cacheDir, modelFile, ngramCacheFile, logger=None, lock=None):
-        """Create a sapienta trainer object"""
+    def __init__(self, modelFile, ngramsFile, cacheDir, features, logger=None,
+    lock=None):
+        self.modelFile = modelFile
+        self.ngramCacheFile = ngramsFile
+        self.cacheDir = cacheDir
+        self.features = features
+
         if logger == None:
             self.logger = logging.getLogger(__name__)
         else:
             self.logger = logger
 
-        self.features = features
-        self.cacheDir = cacheDir
-        self.modelFile = modelFile
-        self.ngramCacheFile = ngramCacheFile
 
         #lock used for multithreaded training only
         #if we're not multithreaded we use a "dummy" lock
@@ -39,6 +41,93 @@ class SAPIENTATrainer:
             self.lock  = lock
         else:
             self.lock = DummyLock()
+
+    #------------------------------------------------------------------------------------------------
+    
+    def extractFeatures(self, file, cache=True):
+        """Extract features from the given file and cache them"""
+
+        from sapienta.ml.docparser import SciXML
+        from sapienta.ml.candc import SoapClient
+
+        cachedName = os.path.join(self.cacheDir, os.path.basename(file))
+
+        if os.path.exists(cachedName):
+
+            self.logger.info("Loading features from %s", cachedName)
+            with self.lock:
+                with open(cachedName, 'rb') as f:
+                    features = cPickle.load(f)
+                return features
+
+        else:
+            self.logger.info("Generating features for %s", file)
+
+            parser = SciXML()
+            doc = parser.parse(file)
+            candcClient = SoapClient()
+            processedSentences = []
+
+
+            for sentence in doc.yieldSentences():
+                candcFeatures = candcClient.getFeatures(sentence.content)
+                sentence.candcFeatures = candcFeatures
+                processedSentences.append(sentence)
+        
+            if cache:
+                self.logger.debug("Caching features at %s", cachedName)
+
+                with self.lock:
+                    with open(cachedName, 'wb') as f:
+                        cPickle.dump(processedSentences, f, -1)
+
+            return processedSentences
+
+    #------------------------------------------------------------------------------------------------
+    def crfdataForFeatures(self, features):
+        """Get a list of labels and crf 'features' from a list of features
+        """
+        labelSequence = crfsuite.StringList()
+        itemSequence = crfsuite.ItemSequence()
+        ngramFilter = lambda l, n: n in self.ngrams[l]
+
+        for sentence in features:
+            self.logger.debug('sentence: %s', 
+                    sentence.content.encode('ascii', 'ignore'))
+
+            label = str(sentence.corescLabel)
+            labelSequence.append(label)
+
+            item = crfsuite.Item()
+            candcFeatures = sentence.candcFeatures
+            candcFeatures.trigrams = []
+
+            del sentence.candcFeatures
+
+            for candcAttrib in AttributeGenerator.yieldCandcAttributes(self.features, candcFeatures, 
+                                                                ngramFilter=ngramFilter):
+
+                    self.logger.debug('parser feature: %s', candcAttrib.attr)
+                    item.append(candcAttrib)
+
+            for positionAttrib in AttributeGenerator.yieldPositionAttributes(self.features, sentence):
+                    self.logger.debug('position feature: %s', positionAttrib.attr)
+                    item.append(positionAttrib)
+            itemSequence.append(item)  
+
+        return itemSequence, labelSequence
+
+
+#-----------------------------------------------------------------------------
+
+class SAPIENTATrainer(FeatureExtractorBase):
+    """Base class for training systems and preprocessing features"""
+    def __init__(self, features, cacheDir, modelFile, ngramCacheFile, logger=None, lock=None):
+        """Create a sapienta trainer object"""
+
+        FeatureExtractorBase.__init__(self, modelFile, ngramCacheFile,
+        cacheDir, features, logger, lock)
+
 
     #------------------------------------------------------------------------------------------------
 
@@ -160,40 +249,6 @@ class CRFTrainer(SAPIENTATrainer):
         trainer.set('c2', '0.1')
         trainer.train(self.modelFile, -1)
 
-    #------------------------------------------------------------------------------------------------
-    def crfdataForFeatures(self, features):
-        """Get a list of labels and crf 'features' from a list of features
-        """
-        labelSequence = crfsuite.StringList()
-        itemSequence = crfsuite.ItemSequence()
-        ngramFilter = lambda l, n: n in self.ngrams[l]
-
-        for sentence in features:
-            self.logger.debug('sentence: %s', 
-                    sentence.content.encode('ascii', 'ignore'))
-
-            label = str(sentence.corescLabel)
-            labelSequence.append(label)
-
-            item = crfsuite.Item()
-            candcFeatures = sentence.candcFeatures
-            candcFeatures.trigrams = []
-
-            del sentence.candcFeatures
-
-            for candcAttrib in AttributeGenerator.yieldCandcAttributes(self.features, candcFeatures, 
-                                                                ngramFilter=ngramFilter):
-
-                    self.logger.debug('parser feature: %s', candcAttrib.attr)
-                    item.append(candcAttrib)
-
-            for positionAttrib in AttributeGenerator.yieldPositionAttributes(self.features, sentence):
-                    self.logger.debug('position feature: %s', positionAttrib.attr)
-                    item.append(positionAttrib)
-            itemSequence.append(item)  
-
-        return itemSequence, labelSequence
-
 
     #------------------------------------------------------------------------------------------------
     def testModel( self, testFiles):
@@ -238,7 +293,47 @@ class CRFTrainer(SAPIENTATrainer):
             allProbabilities += probabilities
 
         return allTrueLabels, allPredictedLabels, allProbabilities
+            
+def main():
+    """Main entrypoint for training script"""
+    from argparse import ArgumentParser
+
+    a = ArgumentParser(description='Train an annotation model with a list of papers')
+
+    a.add_argument('--features', dest='features', action='store', default=None,
+            help="List of features used in training separated by commas.")
+
+
+    a.add_argument('paperDirectory', metavar='paper_dir',
+        help='Location of XML papers to train the model on')
+
+    a.add_argument('modelFile', metavar='model_file',
+        help='The file in which the model should be stored.')
+
+    args = a.parse_args()
+
+    features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
+
+    cacheDir = os.path.join(args.paperDirectory, "cachedFeatures")
+
+    ngramsFile = os.path.join(args.paperDirectory, "ngrams.pickle")
+    
+    trainer = SAPIENTATrainer(features, cacheDir, args.modelFile, 
+        ngramsFile, logging.getLogger("sapienta.trainer"))
+    
+    all_papers = [ os.path.join(args.paperDirectory,f) for f in
+    os.listdir(args.paperDirectory) if f.endswith(".xml")]
+    
+    trainer.train(all_papers)
 
 
 #allows other modules to import a 'default' trainer that we select
 DefaultTrainer = CRFTrainer
+if __name__ == "__main__":
+    
+    logging.basicConfig(level=logging.INFO)
+    
+    rootlog = logging.getLogger()
+
+
+    main()
