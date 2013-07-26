@@ -35,7 +35,7 @@ You should use the sample config file for reference when setting up your SAPIENT
     ~/SAPIENTA $ cp sapienta.cfg.sample ~/.config/
     $ [vim or gedit or kate] ~/.config/sapienta.cfg
     
-For a more in depth look at configuring SAPIENTA. Read the [configuration](wiki/Configuration) guide or the [server configuration](wiki/ServerConfiguration) guide.
+For a more in depth look at configuring SAPIENTA. Read the [configuration](https://github.com/ravenscroftj/SAPIENTA/wiki/Configuration) guide or the [server configuration](https://github.com/ravenscroftj/SAPIENTA/wiki/ServerConfiguration) guide.
 
 ## Usage
 
