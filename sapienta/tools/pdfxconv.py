@@ -74,7 +74,7 @@ def main():
             logging.info("Splitting sentences in %s", infile)
             
             s = SentenceSplitter()
-            outfile = name + "_split" + ext
+            outfile = name + "_split.xml"
             
             eb = options.extra_blacklist.split(",")
 
@@ -86,7 +86,7 @@ def main():
             a = Annotator()
 
             #build annotated filename
-            outfile = name + "_annotated" + ext
+            outfile = name + "_annotated.xml"
             logging.info("Annotating file and saving to %s", outfile)
             a.annotate( anno_infile, outfile )
 

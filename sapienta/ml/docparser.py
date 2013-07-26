@@ -196,7 +196,8 @@ class Paragraph:
 
 
 class Sentence:
-    def __init__(self, corescLabel=''):
+    def __init__(self,sid, corescLabel=''):
+        self.sid = sid
         self.corescLabel = corescLabel
         self.content = ''
         self.numCitations = 0
@@ -258,7 +259,7 @@ class SciXML:
                 return # skipping annotation in title
 
             self.inSent = True
-            sent = Sentence()
+            sent = Sentence(attrs['sid'])
             self.currParagraph.addSentence(sent)
             self.currSentence = sent
 

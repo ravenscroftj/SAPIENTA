@@ -38,17 +38,21 @@ class BaseAnnotator(object):
         for s in self.doc.getElementsByTagName("s"):
             if s.parentNode.localName == "article-title": continue 
 
-            label = labels.pop(0)
+            sid = s.getAttribute("sid")
 
-            c[label] += 1
+            if labels.has_key(sid):
 
-            annoEl = self.doc.createElement("CoreSc1")
-            annoEl.setAttribute("type", label)
-            annoEl.setAttribute("conceptID", label + str(c[label]))
-            annoEl.setAttribute("novelty", "None")
-            annoEl.setAttribute("advantage","None")
+                label = labels[sid]
 
-            s.insertBefore(annoEl, s.firstChild)
+                c[label] += 1
+
+                annoEl = self.doc.createElement("CoreSc1")
+                annoEl.setAttribute("type", label)
+                annoEl.setAttribute("conceptID", label + str(c[label]))
+                annoEl.setAttribute("novelty", "None")
+                annoEl.setAttribute("advantage","None")
+
+                s.insertBefore(annoEl, s.firstChild)
 
 
     def __upgradeXML(self):

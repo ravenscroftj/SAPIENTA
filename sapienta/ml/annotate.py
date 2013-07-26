@@ -42,7 +42,9 @@ class CRFAnnotator(FeatureExtractorBase):
 
         self.tagger.set(items)
         
-        return list(self.tagger.viterbi())
+        labels = list(self.tagger.viterbi())
+
+        return { s[0]: s[1] for s in zip([s.sid for s in sents],labels) }
 
 #------------------------------------------------------------------------------------------------
 def main():
