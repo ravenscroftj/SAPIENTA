@@ -20,7 +20,7 @@ setup(
         'sapientaweb   = sapienta:main'
         ]},
 
-    data_files = [('', ['sapienta/ml/ccg_binding.wsdl'])],
+    data_files = [('', ['ccg_binding.wsdl'])],
 
     author="James Ravenscroft",
     author_email = "ravenscroft@papro.org.uk",
