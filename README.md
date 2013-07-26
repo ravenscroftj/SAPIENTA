@@ -34,6 +34,8 @@ You should use the sample config file for reference when setting up your SAPIENT
 
     ~/SAPIENTA $ cp sapienta.cfg.sample ~/.config/
     $ [vim or gedit or kate] ~/.config/sapienta.cfg
+    
+For a more in depth look at configuring SAPIENTA. Read the [configuration](wiki/Configuration) guide or the [server configuration](wiki/ServerConfiguration) guide.
 
 ## Usage
 
@@ -58,6 +60,5 @@ You can also batch process a set of files:
 
 ### Web server and computation node
 
-SAPIENTA also offers a web frontend/REST API for paper annotation with a
-distributed backend to allow parallel annotation processes. This is considered an abnormal case and is not discussed in this document. You can read about how to use SAPIENTA as a server [here](https://github.com/ravenscroftj/SAPIENTA/wiki/ServerConfiguration)
+You can read about how to use SAPIENTA as a web service [here](https://github.com/ravenscroftj/SAPIENTA/wiki/ServerConfiguration)
 
