@@ -1,0 +1,2 @@
+recursive-include sapienta/templates *
+recursive-include sapienta/static * 
