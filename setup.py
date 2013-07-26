@@ -21,7 +21,7 @@ setup(
         ]},
 
     data_files = [('', ['ccg_binding.wsdl'])],
-
+    include_package_data = True,
     author="James Ravenscroft",
     author_email = "ravenscroft@papro.org.uk",
     description = "Toolkit for annotating XML scientific papers with CoreSC labels",
