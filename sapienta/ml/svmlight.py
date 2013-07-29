@@ -176,30 +176,3 @@ class SVMLightEncoder:
         for i in range(0, len(labelList)):
             modfile.write("%d %s\n" % (labelList[i], " ".join([ "%d:%d" % (f, featList[i][f]) for f in sorted(featList[i]) ])))
 
-
-if __name__ == "__main__":
-
-    import cPickle
-    import avl
-
-    with open("/home/james/tmp/combined/raw/cachedFeatures/ngrams_fold_0.pickle") as f:
-        ngrams = cPickle.load(f)
-        ngrams['bigram']  = avl.new(ngrams['bigram'])
-        ngrams['unigram'] = avl.new(ngrams['unigram'])
-
-    with open("/home/james/tmp/combined/raw/cachedFeatures/b105514n_mode2.Andrew.xml") as f:
-        sents = cPickle.load(f)
-
-
-    cats = []
-
-    for sent in sents:
-        cats.append(str(sent.corescLabel))
-
-    svmenc = SVMLightEncoder(ngrams, )
-
-    classes = sorted(list(set(cats)))
-
-    for sent in sents:
-        print classes.index(str(sent.corescLabel)) + 1, svmenc.encodeSentence(sent.candcFeatures)
-
