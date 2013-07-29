@@ -138,11 +138,11 @@ class SVMLightEncoder:
         baseFeatureIndex += 1
 
         #now we insert struct-1 i.e. which third of the paper the sentence is in
-        sentFeature[baseFeatureIndex] = ord(sent.locationInHeader) - 64
+        sentFeatures[baseFeatureIndex] = ord(sent.locationInHeader) - 64
         baseFeatureIndex += 1
 
         #now insert section/header ID
-        sentFeature[baseFeatureIndex] = sent.headerId
+        sentFeatures[baseFeatureIndex] = sent.headerId
         baseFeatureIndex += 1
 
         for label, ngrams in {'unigram' : candcSentence.unigrams, 'bigram':candcSentence.bigrams }.items():
