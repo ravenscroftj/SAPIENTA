@@ -20,7 +20,10 @@ class SVMLightTrainer(SAPIENTATrainer):
 
         encoder = SVMLightEncoder(self.ngrams)
 
-        all_sents = {}
+        cats = sorted(ALL_CORESCS)
+
+        labelList = []
+        featList  = []
         
         f = open("features.svm", 'wb')
 
@@ -35,32 +38,18 @@ class SVMLightTrainer(SAPIENTATrainer):
                 label = sent.corescLabel
                 encoded = encoder.encodeSentence(sent)
 
-                encoded = { x:1 for x in encoded}
+                featList.append(encoded)
+                labelList.append(cats.index(label) + 1)
 
-                if not label in all_sents:
-                    all_sents[label] = []
 
-                all_sents[label].append(encoded)
-
-            self.logger.info("Currently have %d sentences in %d classes", sum(map(len,all_sents.values())), len(all_sents))
+            self.logger.info("Currently have %d label:sentence pairs",
+            len(featList))
 
         #close the features file
         f.close()
 
         self.logger.info("Training SVM Model...")
 
-        cats = sorted(ALL_CORESCS)
-
-        labelList = []
-        featList  = []
-
-        for label, sentences in all_sents.items():
-            catnum = cats.index(label) + 1
-            
-            for sent in sentences:
-                labelList.append(catnum)
-                featList.append(sent)
-        
         m = svm_train(labelList, featList, '-t 0 -b 1')
 
         svm_save_model(self.modelFile,m)
@@ -167,7 +156,6 @@ class SVMLightEncoder:
             label = sent.corescLabel
             encoded = self.encodeSentence(sent)
 
-            #encoded = { x:1 for x in encoded}
             catnum = cats.index(label) + 1
 
             labelList.append(catnum)
