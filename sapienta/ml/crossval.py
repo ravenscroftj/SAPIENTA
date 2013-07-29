@@ -25,7 +25,7 @@ def train_and_test(fixture):
     ngramCacheFile = os.path.join(cacheDir, "ngrams_fold_%d.pickle" % foldNo)
     
     modelPath = os.path.join(corpusDir, 
-            "model_fold_%d.model" % foldNo)
+            "model_fold_%d_%s.model" % (foldNo,modelType))
 
     logger = logging.getLogger(__name__ + ":trainer:fold_%d" % foldNo)
     

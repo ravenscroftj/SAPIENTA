@@ -94,8 +94,7 @@ class SVMLightTrainer(SAPIENTATrainer):
 
             for sent in sents:
                 label = sent.corescLabel
-                encoded = encoder.encodeSentence(sent.candcFeatures)
-
+                encoded = encoder.encodeSentence(sent)
                 labels.append(label)
                 feats.append(encoded)
 
