@@ -86,14 +86,28 @@ a bunch of binaries including `soap_server`. Run the `soap_server` file to
 verify that compilation worked. You should an error message and usage
 instructions for the server.
 
+### Extracting C and C Models
+
 The final step to configuring the server is to extract the models into the
-same directory as `candc-1.00`. Extract all models to the same place,
-extracting markedup_new last and placing it in the models/parser/cats/ folder.
+same directory as `candc-1.00` as shown below:
+
+    parent directory
+       --candc-1.00
+       --models**
+
+
+Extract all models to the same place, extracting markedup_new last and placing it in the models/parser/cats/ folder. 
+the main models archive (models-1.0-2.tbsz2) will extract to the correct directory but the `pos_bio` and `super_coresc`
+archives will need to be extracted and moved into this location.
 
 Now, copy the file sapienta/opt/candc/run_server.sh to the candc-1.00/bin
 directory, and execute it directly ./run_server.sh. If everything has been
 properly configured, you should see `waiting for connections on
 127.0.0.1:9004`. 
+
+
+
+
 
 ## CRFSuite
 
