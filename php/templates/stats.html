@@ -1,0 +1,7 @@
+{%extends "main.html" %}
+{%block title%}Service Status{% endblock %}
+{%block content %}
+      <h1>SAPIENTA Service Status</h1>
+      <p>Sapienta is currently running with {{workers}} workers consisting of {{slots}} parallel processing threads in total.</p>
+      <p>There are currently {{pending}} papers pending annotation and {{working}} papers being processed</p>
+      {% endblock %}

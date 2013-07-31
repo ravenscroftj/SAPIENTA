@@ -1,0 +1,2 @@
+      <h1>SAPIENTA Paper Annotation Service</h1>
+      <p>Welcome to the SAPIENTA annotation service. This page allows you to submit papers to be annotated by our servers. We currently accept PDF and XML (in SciXML or PubMed DTD formats).</p>
