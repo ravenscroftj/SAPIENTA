@@ -56,7 +56,16 @@ class BaseAnnotator(object):
                 annoEl.setAttribute("novelty", "None")
                 annoEl.setAttribute("advantage","None")
 
-                s.insertBefore(annoEl, s.firstChild)
+
+                textEl = self.doc.createElement("text")
+
+                children = s.childNodes
+
+                map(textEl.appendChild, children)
+                map(s.removeChild, children)
+
+                s.appendChild(annoEl)
+                s.appendChild(textEl)
 
 
     def __upgradeXML(self):
