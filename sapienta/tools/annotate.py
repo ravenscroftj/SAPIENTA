@@ -15,10 +15,14 @@ from urllib import urlencode
 from progressbar import ProgressBar
 from xml.dom import minidom
 from curlutil import CURLUploader
-from collections import Counter
 from sapienta import app
 
 config = app.config
+
+try:
+    from collections import Counter
+except:
+    from sapienta.ml.counter import Counter
 
 
 
