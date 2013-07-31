@@ -28,7 +28,6 @@ class FeatureExtractorBase:
         self.cacheDir = cacheDir
         self.features = features
 
-
         if logger == None:
             self.logger = logging.getLogger(__name__)
         else:
@@ -122,7 +121,7 @@ class FeatureExtractorBase:
 #-----------------------------------------------------------------------------
 
 class SAPIENTATrainer(FeatureExtractorBase):
-
+    """Base class for training systems and preprocessing features"""
     def __init__(self, features, cacheDir, modelFile, ngramCacheFile, logger=None, lock=None):
         """Create a sapienta trainer object"""
 
@@ -149,6 +148,8 @@ class SAPIENTATrainer(FeatureExtractorBase):
 
             ngrams = NgramBuilder()
 
+            
+
             for file in filenames:
 
                 #extract features (if they're not already)
@@ -172,12 +173,62 @@ class SAPIENTATrainer(FeatureExtractorBase):
     #------------------------------------------------------------------------------------------------
 
     def train(self, trainfiles):
-        """Train a model based on a list of filenames and exclude any appearing in excludeList"""
+        """Stub overriden by concrete implementations to do preprocessing and training
+        """
+        raise Exception("Not implemented! Use a subclass of SAPIENTATrainer")
+
+    #------------------------------------------------------------------------------------------------
+    
+    def extractFeatures(self, file):
+        """Extract features from the given file and cache them"""
+
+        from sapienta.ml.docparser import SciXML
+        from sapienta.ml.candc import SoapClient
+
+
+        cachedName = os.path.join(self.cacheDir, os.path.basename(file))
+
+        if os.path.exists(cachedName):
+
+            self.logger.info("Loading features from %s", cachedName)
+            with self.lock:
+                with open(cachedName, 'rb') as f:
+                    features = cPickle.load(f)
+                return features
+
+        else:
+            self.logger.info("Generating features for %s", file)
+
+            parser = SciXML()
+            doc = parser.parse(file)
+            candcClient = SoapClient()
+            processedSentences = []
+
+
+            for sentence in doc.yieldSentences():
+                candcFeatures = candcClient.getFeatures(sentence.content)
+                sentence.candcFeatures = candcFeatures
+                processedSentences.append(sentence)
         
+            self.logger.debug("Caching features at %s", cachedName)
+
+            with self.lock:
+                with open(cachedName, 'wb') as f:
+                    cPickle.dump(processedSentences, f, -1)
+
+            return processedSentences
+
+
+#--------------------------------------------------------------------------------------------------
+
+
+class CRFTrainer(SAPIENTATrainer):
+    """Specific implementation of SAPIENTA trainer that uses CRFSuite for training"""
+
+    def train(self, trainfiles):
         self.preprocess(trainfiles)
         self.trainCRF(trainfiles)
 
-        
     #------------------------------------------------------------------------------------------------
     def trainCRF(self, files):
         """Train the CRFSuite system using features extracted from files
@@ -276,9 +327,8 @@ def main():
     trainer.train(all_papers)
 
 
-
-    
-
+#allows other modules to import a 'default' trainer that we select
+DefaultTrainer = CRFTrainer
 if __name__ == "__main__":
     
     logging.basicConfig(level=logging.INFO)
@@ -287,4 +337,3 @@ if __name__ == "__main__":
 
 
     main()
-        

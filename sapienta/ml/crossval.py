@@ -1,5 +1,6 @@
 from __future__ import division
 
+import sys
 import avl
 import logging
 import os
@@ -9,7 +10,8 @@ import csv
 
 from multiprocessing import Pool, Lock
 
-from sapienta.ml.train import SAPIENTATrainer
+from sapienta.ml.svmlight import SVMLightTrainer as Trainer
+#from sapienta.ml.train import CRFTrainer as Trainer
 
 from collections import Counter
 
@@ -18,19 +20,29 @@ def train_and_test(fixture):
     """This method creates a trainer and trains and evaluates a crf model
     """
 
-    features, cacheDir, corpusDir, foldNo, testFiles, trainFiles, lock = fixture
+    modelType, features, cacheDir, corpusDir, foldNo, testFiles, trainFiles, lock = fixture
 
     ngramCacheFile = os.path.join(cacheDir, "ngrams_fold_%d.pickle" % foldNo)
     
     modelPath = os.path.join(corpusDir, 
-            "model_fold_%d.model" % foldNo)
+            "model_fold_%d_%s.model" % (foldNo,modelType))
 
     logger = logging.getLogger(__name__ + ":trainer:fold_%d" % foldNo)
     
     logger.addHandler(logging.FileHandler(os.path.join(corpusDir, "logs", "fold_%d.log" % foldNo)))
 
+    logger.info("Training model of type %s", modelType)
+
+    if modelType == 'crf':
+        from sapienta.ml.train import CRFTrainer as Trainer
+    elif modelType == 'svm':
+        from sapienta.ml.svmlight import SVMLightTrainer as Trainer
+    else:
+        logger.error("Unknown model type %s", modelType)
+        sys.exit()
+
     #construct a sapienta trainer object
-    trainer = SAPIENTATrainer(features, cacheDir, modelPath, ngramCacheFile, logger)
+    trainer = Trainer(features, cacheDir, modelPath, ngramCacheFile, logger)
 
     if os.path.exists(modelPath):
         logger.warn("Not regenerating model for fold %d. "
@@ -57,11 +69,13 @@ class CrossValidationTrainer:
 
     #------------------------------------------------------------------------------------------------
 
-    def train_cross_folds( self, foldsFile, corpusDir, features):
+    def train_cross_folds( self, modelType, foldsFile, corpusDir, features):
         """Train SAPIENTA on folds described in foldsFile."""
 
         from sapienta.ml.folds import get_folds
         
+        self.modelType = modelType
+
         self.folds = get_folds( foldsFile )
         self.corpusDir = corpusDir
 
@@ -88,7 +102,7 @@ class CrossValidationTrainer:
         fixtures = []
 
         #TEMPORARY THING THAT STOPS LOOKING AFTER 3 FOLDS
-        #self.folds = self.folds[:1]
+        self.folds = self.folds[:1]
 
         for f, fold in enumerate(self.folds):
 
@@ -112,12 +126,12 @@ class CrossValidationTrainer:
             #calculate which files to use for training
             trainFiles = [file for file in allFiles if file not in testFiles]
 
-            fixtures.append( ( features, self.cacheDir, self.corpusDir, f, testFiles, trainFiles,None))
+            fixtures.append( ( self.modelType, features, self.cacheDir, self.corpusDir, f, testFiles, trainFiles,None))
             
 
-        p = Pool()
         
         #run the training
+        #p = Pool()
         #results = p.map(train_and_test, fixtures)
         results = map(train_and_test, fixtures)
 
@@ -138,6 +152,8 @@ class CrossValidationTrainer:
         tp = {}
         fp = {}
         fn = {}
+
+        print labels
 
         f = open(os.path.join(self.corpusDir, "results_fold_%d.csv" %
         fold),'wb')
@@ -253,6 +269,9 @@ def main():
     a.add_argument('foldTable', metavar='fold_table_path', type=str,
             help='')
 
+    a.add_argument('--model', dest='modeltype', action='store', default='crf',
+            help='The type of model to train - crf or svm - defaults to crf')
+
     a.add_argument('--corpusdir', dest='corpusdir', action='store', default=None,
             help='Directory in which xml papers are found and cached data can be stored.')
 
@@ -292,7 +311,7 @@ def main():
         sys.exit(1)
 
     
-    t.train_cross_folds(args.foldTable, corpusdir, features)
+    t.train_cross_folds(args.modeltype, args.foldTable, corpusdir, features)
     #t.train_cross_folds("/home/james/tmp/foldTable.csv", "/home/james/tmp/combined/raw", features)
 
 
