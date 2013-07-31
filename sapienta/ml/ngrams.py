@@ -7,8 +7,10 @@ from sapienta.ml.bnc import BncFilter
 import avl
 import logging
 
-
-from collections import Counter
+try:
+    from collections import Counter
+except:
+    from sapienta.ml.counter import Counter
 
 class NgramBuilder:
     """This class collects the most relevant ngrams from a corpus of documents"""
