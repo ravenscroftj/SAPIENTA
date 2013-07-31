@@ -13,8 +13,10 @@ from multiprocessing import Pool, Lock
 from sapienta.ml.svmlight import SVMLightTrainer as Trainer
 #from sapienta.ml.train import CRFTrainer as Trainer
 
-from collections import Counter
-
+try:
+    from collections import Counter
+except:
+    from sapienta.ml.counter import Counter
 
 def train_and_test(fixture):
     """This method creates a trainer and trains and evaluates a crf model
