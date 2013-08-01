@@ -216,12 +216,15 @@ class SoapClient:
     def cleanseInput(self, s):
         """Cleanse input sentence s"""
 
+        if s == "":
+            return u""
+
         #separate out punctuation , ; : ? is moved a space away from the words
         s = re.sub(r'(?<!(\s))(\,|\:|\?|\;)(?=(?:\s))', lambda m: " " + (m.group(2) or ''), s)
         
         #move fullstop away from last word, i.e. end of sentence. -> end of sentence .
         if (s[-1] == ".") and (s[-2] != " "):
-            s = s[:-1] + " ."
+                s = s[:-1] + " ."
         
         words = s.split(" ")
 
