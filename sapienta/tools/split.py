@@ -86,9 +86,16 @@ class SentenceSplitter:
         if(len(self.indoc.getElementsByTagName("front")) > 0):
             #get the element
             front = self.indoc.getElementsByTagName("front")[0]
-            nextEl = self.indoc.getElementsByTagName("permissions")[0].nextSibling
+
+            #see if there is an article-meta element or add one
+            if len(self.indoc.getElementsByTagName("article-meta")) < 1:
+                meta = self.indoc.createElement("article-meta")
+                front.appendChild(meta)
+            else:
+                meta = self.indoc.getElementsByTagName("article-meta")[0]
+
+
             abstractEl = self.indoc.createElement("abstract")
-            parentEl = nextEl.parentNode
             titleEl = self.indoc.createElement("title")
             absec = self.indoc.createElement("sec")
             abp = self.indoc.createElement("p")
@@ -98,7 +105,7 @@ class SentenceSplitter:
             absec.appendChild(abp)
             abp.appendChild(self.indoc.createTextNode(dummytext))
 
-            parentEl.insertBefore(abstractEl,nextEl)
+            meta.appendChild(abstractEl)
 
 
     def allocateSIDs(self):
