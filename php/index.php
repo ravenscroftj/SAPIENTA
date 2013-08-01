@@ -1,16 +1,12 @@
 <?php
-
-//require("XmlRPC.php");
-
-require("xmlrpc-2.2.2/lib/xmlrpc.inc");
-
 /**
 * PHP web frontend for SAPIENTA (if you don't have WSGI on your web server)
 *
 */
-define('RPC_HOST',"127.0.0.1");
-define('RPC_PORT',1234);
-define('UPLOAD_DIR', "tmp");
+
+
+require("config.php");
+require("sapienta.php");
 
 
 /**
@@ -23,11 +19,10 @@ function jobstatus_view(){
 
 	$id = (int)$_GET['jobid'];
 
-	//initiate XML-RPC communication
-	$xmlrpc = new xmlrpc_client("http://".RPC_HOST.":".RPC_PORT."/");
+	//talk to SAPIENTA server about the job
+	$sc = new SAPIENTAClient();
+	$job =$sc->get_job_status($id);
 
-	$r = $xmlrpc->send(new xmlrpcmsg('get_status', array(new xmlrpcval($id,'int'))));
-	$job = php_xmlrpc_decode($r->value());
 	
 	if( $job['status'] == "WORKING" || $job['status'] == "PENDING") {
 	?>
@@ -43,6 +38,16 @@ function jobstatus_view(){
 		//   -->
 		</script>
 	<?php
+	}elseif( $job['status'] == "FAILED" ){
+	?>
+	<p>Unfortunately Job <?php echo $job['jobid']; ?> encountered an error and could not be completed.</p>
+
+	<textarea style="width: 640; height:480;"><?php echo $job['error']; ?></textarea>
+
+	<p>This may be a problem with the paper file or it may be a server error. Please try again later or try
+	annotating a different paper</p>
+
+	<?
 	}else{
 	?>
 		<p>Job <?php echo $job['jobid']; ?> has been completed and is now ready to be downloaded</p>
@@ -66,19 +71,15 @@ function get_view(){
 	$id = (int)$_GET['id'];
 
 	//initiate XML-RPC communication
-	$xmlrpc = new xmlrpc_client("http://".RPC_HOST.":".RPC_PORT."/");
-
-	$r = $xmlrpc->send(new xmlrpcmsg('get_status', array(new xmlrpcval($id,'int'))));
-	$job = php_xmlrpc_decode($r->value());
-
-	$r = $xmlrpc->send(new xmlrpcmsg('get_result', array(new xmlrpcval($id,'int'))));
-	$content = php_xmlrpc_decode($r->value());
+	$sc = new SAPIENTAClient();
+	$job =$sc->get_job_status($id);
+	$content = $sc->get_job_content($id);
 
 	header('Content-Type: application/octet-stream');
 	header("Content-Transfer-Encoding: Binary");
 	header("Content-disposition: attachment; filename=\"".basename($job['filename'])."\"");
 
-	print gzuncompress($content);
+	print $content;
 	exit();
 }
 
@@ -90,13 +91,8 @@ function status_view(){
 
 	include("templates/header.php");
 
-	//$xmlrpc = new XmlRPC(RPC_HOST, RPC_PORT);
-
-	$xmlrpc = new xmlrpc_client("http://".RPC_HOST.":".RPC_PORT."/");
-
-	$r = $xmlrpc->send(new xmlrpcmsg("get_stats", array()));
-
-	$stats = php_xmlrpc_decode($r->value());
+	$sc = new SAPIENTAClient();
+	$stats = $sc->get_service_status();
 
 	?>
 	<h1>SAPIENTA Service Status</h1>
@@ -132,21 +128,8 @@ function upload_view(){
 			if(@move_uploaded_file($_FILES['the_file']['tmp_name'], $filename)){
 				
 				
-				//initiate XML-RPC communication
-				$xmlrpc = new xmlrpc_client("http://".RPC_HOST.":".RPC_PORT."/");
-				
-				//read and encode uploaded form data
-				$fp = fopen($filename, 'rb');
-				$data = fread($fp, filesize($filename));
-				fclose($fp);
-				
-				$filexml = new xmlrpcval($filename, 'string');
-				$content = new xmlrpcval(gzcompress($data), 'base64');
-
-				$r = $xmlrpc->send(new xmlrpcmsg("queue_job", array($filexml, $content)));
-
-				//post XML-RPC data and get job ID
-				$job_id = php_xmlrpc_decode($r->value());
+				$sc = new SAPIENTAClient();
+				$job_id = $sc->submit_job($filename);
 
 				header("Location: ?action=viewjob&jobid=$job_id");
 				exit();
@@ -193,6 +176,12 @@ switch($_GET['action']){
 
 	case 'viewjob':
 		jobstatus_view();
+	break;
+
+	case 'apiinfo':
+	include("templates/header.php");
+	include("templates/api.php");
+	include("templates/footer.php");
 	break;
 
 	case 'index': default:
