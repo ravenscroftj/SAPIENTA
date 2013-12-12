@@ -17,7 +17,7 @@ sys.stdout = codecs.getwriter('utf8')(sys.stdout)
 
 blacklist = set(['journal-id', 'journal-meta','article-id','article-categories'
 'contrib','contrib-group', 'aff','pub-date','volume','issue','elocation-id',
-'history','author-notes', 'copyright-statement', 'funding-group',
+'history','author-notes', 'copyright-statement', 'funding-group','table','tr','td',
 'copyright-year','counts','s', 'subj-group','author-notes', 'alt-title',
 'title','ref-list','ack','meta','permissions', 'custom-meta-group',
 'responseDate','request','header', 'xref', 'object-id', 'CURRENT_AUTHORLIST','METADATA'])
