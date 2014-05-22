@@ -60,6 +60,11 @@ should get output similar to the following.
 
 Hit CTRL + D to return back to the shell.
 
+Some gsoap 2.7 and 2.8 versions give an IPV6 error when the CandC soap server is run. 
+The last successful version of gsoap is 2.7.9f which can be obtained 
+[here](http://sourceforge.net/projects/gsoap2/files/gSOAP/gSOAP%202.7.9f%20stable/). 
+You may also need to export `CXXFLAGS='-fpermissive'` to get it to compile.
+
 ### Compiling C and C tools
 
 **Note: You can skip this section if you are using the pre-compiled binaries**
