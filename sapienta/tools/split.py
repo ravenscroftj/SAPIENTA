@@ -15,7 +15,7 @@ from text_sentence import Tokenizer
 
 sys.stdout = codecs.getwriter('utf8')(sys.stdout)
 
-blacklist = set(['journal-id', 'journal-meta','article-id','article-categories'
+blacklist = set(['journal-id', 'journal-meta','article-id','article-categories','article-title',
 'contrib','contrib-group', 'aff','pub-date','volume','issue','elocation-id',
 'history','author-notes', 'copyright-statement', 'funding-group','table','tr','td',
 'copyright-year','counts','s', 'subj-group','author-notes', 'alt-title',

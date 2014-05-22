@@ -56,16 +56,38 @@ class BaseAnnotator(object):
                 annoEl.setAttribute("novelty", "None")
                 annoEl.setAttribute("advantage","None")
 
-
                 textEl = self.doc.createElement("text")
 
                 children = s.childNodes
 
-                map(textEl.appendChild, children)
-                map(s.removeChild, children)
+                # We're going to copy the current children somewhere for safety
+                # then delete them, then add new CoreSc child and then put back 
+                # the original children.
 
+                # So first, the copying.
+                copychildren = []
+                for ch in children:
+                    clonech = ch.cloneNode(True)
+                    if clonech.nodeType == minidom.Node.ELEMENT_NODE: # such as <marker type="block"/>
+                        copychildren.append(clonech)
+                    else:
+                        # Should be just plain text
+                        t = self.doc.createElement("text") 
+                        t.appendChild(clonech)
+                        copychildren.append(t)
+                
+                # Something odd about removing the children through a map or for-loop
+                # meant that not all were being removed, hence this while-loop
+                # Was previously map(s.removeChild, children)
+                while s.hasChildNodes():
+                    ch = s.firstChild
+                    s.removeChild(ch)
+                    ch.unlink()
+
+                # Add the new annotation, and then the original children
                 s.appendChild(annoEl)
-                s.appendChild(textEl)
+                map(s.appendChild, copychildren)
+
 
 
     def __upgradeXML(self):
