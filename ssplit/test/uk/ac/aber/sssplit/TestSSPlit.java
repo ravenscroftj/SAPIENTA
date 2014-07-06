@@ -12,6 +12,8 @@ public class TestSSPlit {
 
         File noSentFile = new File("b103844n_nosents.xml");
 
+        System.out.print("File exists: "+noSentFile.exists());
+
         XMLSentSplit.processFile(noSentFile.getName(), noSentFile.getParent());
     
     }

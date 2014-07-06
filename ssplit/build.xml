@@ -67,8 +67,8 @@
 
     <target name="test" depends="buildTest">
         <junit printsummary="yes" fork="yes" haltonfailure="yes">
-          <formatter type="plain"/>
-          <test name="uk.ac.aber.ssplit.TestSSPlit"/>
+          <formatter type="plain" usefile="false"/>
+          <test name="uk.ac.aber.sssplit.TestSSPlit"/>
 
             <classpath>
                 <pathelement location="${build}"/>
