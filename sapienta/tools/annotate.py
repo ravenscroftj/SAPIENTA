@@ -62,19 +62,14 @@ class BaseAnnotator(object):
 
                 # We're going to copy the current children somewhere for safety
                 # then delete them, then add new CoreSc child and then put back 
-                # the original children.
+                # the original children. The children will be wrapped by a 
+                # new <text> element
 
                 # So first, the copying.
-                copychildren = []
                 for ch in children:
                     clonech = ch.cloneNode(True)
-                    if clonech.nodeType == minidom.Node.ELEMENT_NODE: # such as <marker type="block"/>
-                        copychildren.append(clonech)
-                    else:
-                        # Should be just plain text
-                        t = self.doc.createElement("text") 
-                        t.appendChild(clonech)
-                        copychildren.append(t)
+                    textEl.appendChild(clonech)
+
                 
                 # Something odd about removing the children through a map or for-loop
                 # meant that not all were being removed, hence this while-loop
@@ -86,7 +81,8 @@ class BaseAnnotator(object):
 
                 # Add the new annotation, and then the original children
                 s.appendChild(annoEl)
-                map(s.appendChild, copychildren)
+                s.appendChild(textEl)
+
 
 
 
