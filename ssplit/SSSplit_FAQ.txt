@@ -1,0 +1,36 @@
+SSSplit FAQ
+------------------
+1. What is SSSplit?
+2. How do I install SSSplit?
+3. How do I run SSSplit?
+
+
+
+1. What is SSSplit?
+---------------------
+SAPIENT Sentence Splitter (SSSplit) is an XML-aware sentence splitter which preserves XML markup and identifies sentences through the addition of in-line markup
+The reason for developing our own sentence splitter was that sentence splitters widely available could not handle XML properly. The XML markup contains useful information about the document structure and formatting in the form of inline tags, which is important for determining the logical structure of the paper.
+
+SSSplit has been written in the platform-independent Java language (version 1.6), based on and extending open source <a href="http://search.cpan.org/~tgrose/HTML-Summary-0.017/">Perl code</a> for handling plain text. In order to make our sentence splitter XML aware, we translated the Perl regular expression rules into Java and modifed them to make them compatible with the SciXML schema.
+
+
+2. How do I install SSSplit?
+-----------------------------
+Make sure you have java 1.6
+Download and unzip SSSplit2.jar.zip and place it in one of your local directories.
+This completes the installation of SSSplit.
+
+
+3. How do I run SSSplit?
+-----------------------------
+We assume you have a file compliant with the our minimal DTD or and XML file which follows the SciXML or Pubmed DTDs.
+In a command prompt window, go to the SSSplit directory (e.g. /users/mydir/SSSplit)
+Navigate to /users/mydir/SSSplit/bin and type:
+
+java -jar SSSplit2.jar -fs  <Path_to_file> <Destination_directory>
+
+
+To process all files in a directory A and put them in a directory B, use the command:
+
+
+java -jar SSSplit2.jar -ds  <dirA> <dirB>
