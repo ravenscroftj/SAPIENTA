@@ -83,6 +83,24 @@
 
     </target>
 
+    <target name="testspeed" depends="buildTest">
+        <junit printsummary="yes" fork="yes" haltonfailure="yes">
+          <formatter type="plain" usefile="false"/>
+          <test name="uk.ac.aber.sssplit.AverageTimeTest"/>
+
+            <classpath>
+                <pathelement location="${build}"/>
+                <fileset dir="${classpath}">
+                    <include name="*.jar"/>
+                </fileset>
+                <fileset dir="${dist}/lib/">
+                    <include name="*.jar"/>
+                </fileset>
+            </classpath>
+        </junit>
+
+    </target>
+
     <target name="clean"
         description="clean up" >
     <!-- Delete the ${build} and ${dist} directory trees -->
