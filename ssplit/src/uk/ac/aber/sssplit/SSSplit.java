@@ -79,13 +79,154 @@ public class SSSplit {
 	public static String fileName;
 	private static StringBuffer finalbuffer;
 
-	public static String removeInvalidTags(String string)
+    private static Pattern cpara = Pattern.compile("</p>", Pattern.CASE_INSENSITIVE);
+    private static Pattern para = Pattern.compile("<p>|<p.+?>", Pattern.CASE_INSENSITIVE);
+    private static Pattern closingTags = Pattern.compile("</?(.+?)>");
+
+    private static String allowedAttrChars = "[\\w-_\2013\\.\\(\\)\\[\\]]";
+    
+    private static String refSCIgeneral = "(?:(?i)(?:(?:\\d+[,\u2013])*\\d+)?(?:</IT>)?<REF(?:(?:\\sID=\"(?:\\w-)?\\w+?(?:\\s\\w+?)*\")|(?:\\sREFID=\"\\w+?\")|(?:\\stext=\"(?:refs?\\.(?:\\s)?)?(?:(?:\\d+[,�\u2013\u002D])*\\d+)?\\w*?\")|(?:\\sTYPE=\"\\w+?\"))*(?:\\s?/>|>(?:(?:refs?\\.(?:\\s)?)?(?:(?:(?:\\d+(?:<IT>)?\\w?(?:</IT>)?)|(?:(?:<IT>)?\\w(?:</IT>)?[-,\u2013])|(?:(?:<IT>)?\\w(?:</IT>)?[-,\u2013]))*(?:(?:\\d+(?:<IT>)?\\w?(?:</IT>)?)|(?:(?:<IT>)?\\w?(?:</IT>)?)))?</REF>))|(?:(?i)<xref(?:\\sid=\"(?:\\w-)?\\w+?(?:\\s\\w+?)*\")?(?:\\sref-type=\"(?:aff|app|author-notes|bibr|boxed-text|chem|contrib|corresp|disp-formula|fig|fn|kwd|list|plate|scheme|sec|statement|supplementary-material|table|table-fn|other)\")?(?:\\srid=\"(?:[-\\u2013\\w])*\")?>[-\\u2013,\\d]+</xref>)(?-i))"; 
+
+    private static String refFootnote= "<SUP TYPE=\"FOOTNOTE_MARKER\"\\sID=\"" + allowedAttrChars + "+?\"/>";
+
+    private static String atLeastOneRefSCI = "((?:" + refSCIgeneral + "+" + "\\)?)|" + refFootnote + "|\\))"; //there may be a bracket after the reference
+        
+    private static String capturePunctuation = "(\\.|\\?|(?<!\\(\\w{1,15})\\!)";
+    
+    private static String abbreviations = "((?i)(\\(|\\[|\\s|>|^)(al|Am|Angew|approx|Biochim|Biophys|ca|cf|Chem|Co|conc|Dr|Drs|Corp|Ed|no|No|e\\.g|p\\.p\\.m|Engl|eq|eqns?|exp|Rs|Figs?|Labs?|Dr|etc|Calc|i\\.e|Inc|Int|Lett|Ltd|p|p\\.a|Phys|Prof|prot|refs?|Rev|sect|st|vs|(?-i)(?<!(?:</SB>|(?:\\d\\s?(<IT>?))|<IT>))(?:(?:(?:[A-Z]|[a-z])?\\.)\\s?[a-z])|(?-i)(?<!(?:</SB>|(?:\\d\\s?(<IT>?))|<IT>))(?:(?:(?:[A-Z]|[a-z])\\.)?\\s?(?:(?:[A-Z]|[a-z])\\.)?\\s?[A-Z])|(?-i)(?<!(?:</SB>|(?:\\d\\s?(<IT>?))|<IT>))(?:(?:(?:[A-Z]|[a-z])\\.)?\\s?(?:(?:[A-Z]|[a-z])\\.)\\s?[a-z])|(?-i)(?<=(?:(?<!(?:</SB>|(?:\\d)))(?:(?:\\s|\\(|^)<IT>)))(?:\\s?\\w{1,10})|\\s?\\.\\s?\\.\\s?|\\())";
+ 
+    // moving all references inside the punctuation so that the sentence splitting is easier
+    private static Pattern refSentence = Pattern.compile("(.*?)" +  capturePunctuation + atLeastOneRefSCI,Pattern.CASE_INSENSITIVE);
+
+    private static Pattern abbrevs = Pattern.compile(".*?(" + abbreviations + "(?:</IT>)?)" + "$",Pattern.CASE_INSENSITIVE); 
+
+
+
+    private static String capitals = "[A-Z0-9]"; //caps and numbers may begin a sentence
+    private static String punctuation = "(?:\\.|\\?|(?<!\\(\\w{1,15})\\!)"; 
+    
+    private static String optPunctuation = punctuation + "??";
+    private static String endEquation = "</EQN>";
+    private static String endPara = "(</P>|</ABSTRACT>|</list>)";
+    private static String beginPara = "<P>";
+    private static String optStartQuote = "['\"\u201C]?";
+    private static String optCloseQuote = "['\"\u201D]?";
+    private static String optReferenceSCI = refSCIgeneral + "*";
+
+    private static String beginFirstSentence = "^";
+    private static String endLastSentence = "$";
+    private static String openHeader = "(<HEADER(\\sHEADER_MARKER=\""+ allowedAttrChars + "+?\")?>|<HEADER/>|<TITLE>|<TITLE/>)"; 
+    private static String wholeHeader = "((<BODY>)?(<DIV(\\sDEPTH=\"\\d+\")?>)?(<HEADER(\\sHEADER_MARKER=\"" + allowedAttrChars + "+?\")?>.*?</HEADER>|<HEADER/>)|<TITLE>)";               
+    private static String optOpenHeader = openHeader + "?";
+    
+    
+    private static String eqn = "<EQN(\\sID=\"" + allowedAttrChars + "+?\")?(\\sTYPE=\"" + allowedAttrChars + "+?\")?>";
+    private static String xref = "<XREF(\\sID=\"" + allowedAttrChars + "+?\")?(\\sTYPE=\"" + allowedAttrChars + "+?\")?>";
+    private static String listTag = "<list.+?>"; //13/10/09
+    
+    private static String manyStartTags = "(" + eqn + "|" + xref +"|"+listTag + "|<BODY>|<DIV(\\sDEPTH=\"\\d+\")?>|<P>|<p.+?>|<SEC.+?>|<disp-quote>|<supplementary-material.+?>|<boxed-text.+?>|<list list-type=\"\\w{2,20}\">|<list-item>|<ABSTRACT>|<abstract.+>|<statement>|<def>)*";
+    private static String optEndTags = "(</XREF>|</HEADER>|<HEADER/>|</TITLE>|</boxed-text>|</list>|</list-item>|</statement>)?"; //shs
+    
+    private static String optEndTags1 = "(</XREF>|</HEADER>|<HEADER/>|</TITLE>|</boxed-text>|<list.+?>|</list>|</list-item>|</statement>|</inline-supplementary-material>|<inline-supplementary-material/>|</related-article>|</related-object>|</address>|</alternatives>|</array>|</boxed-text>|</chem-struct-wrap>|</fig>|</fig-group>|<graphic.+?/>|</media>|</preformat>|</supplementary-material>|</table-wrap>|</table-wrap-group>|</disp-formula>|</disp-formula-group>|</element-citation>|</mixed-citation>|</nlm-citation>|</bold>|</italic>|</monospace>|</overline>|</overline-start>|</overline-end>|</roman>|</sans-serif>|</sc>|</strike>|</underline>|</underline-start>|</underline-end>|</award-id>|</funding-source>|</open-access>|</chem-struct>|<inline-formula/>|<inline-graphic/> |</private-char>|</def-list>|</list>|</tex-math>|</mml:math>|</abbrev>|</milestone-end>|</milestone-start>|</named-content>|</styled-content>|</ack> |</disp-quote>|</speech>|</statement>|</verse-group>|</fn>|</target>|</xref>|</ref>|</sub>|</sup>|</def>)*"; 
+
+    private static String endTags = "(</P>|</IT>|</italic>|</EQN>|</XREF></bold>|</NAMED-CONTENT>|<disp-formula>|</HEADER>|<HEADER/>|</TITLE>|</disp-quote>|</supplementary-material>|</boxed-text>|</list>|</list-item>|</statement>)"; //shs
+    private static String manyEndTags = endTags + "*";
+    
+    private static String endParaOrEq = "(" + endPara+"|" + endEquation + ")\\s?"; 
+    private static String formatting="(<B>|<IT>|<SP>|<italic>|<BOLD>|<disp-formula>|<named-content.+?>)"; 
+    
+    private static String puncNoAbbrv = "(?<!" + abbreviations + "(</IT>)?)"+ punctuation + "\\s";
+    private static String greekLetters = "[\u0370-\u03FF\u1F00-\u1FFF]";
+    private static String pAttr = "<p.+?>";
+    private static String sentenceCommencer = "(?>" +beginPara + "|" + pAttr +"|"+ "Fig(s)?\\." + "|" + capitals + "|" + formatting + "|" + "\\[|\\(|"+greekLetters+"|\u007C)";
+    private static String equationCommencer = "(" + eqn + ".)";
+    private static String commencer = "(" + sentenceCommencer + "|" + equationCommencer + ")";
+    
+        
+    private static String noSpaceReqLookahead =  manyStartTags + optOpenHeader + optStartQuote + commencer;
+        
+    private static String nocapsParaLookAhead  = "(\\s?<P>)";
+    
+    private static String startSentence = manyStartTags + optStartQuote + commencer;
+    
+    // For matching the end of the previous sentence
+    private static String sentenceFigLookbehind = "(?<=(?<!"+ abbreviations + punctuation + ")((" + endParaOrEq + ")|("+ puncNoAbbrv + ")|("
+        + optPunctuation + optEndTags + endTags + "\\s?)))";
+        
+    //for matching the start of a sentence following a header
+    private static String headerLookahead = "(?=(?:" + manyStartTags + optOpenHeader
+	    + optStartQuote + commencer + "))";
+
+    private static String Figure="<fig.+?</fig>";
+    private static String tableWrap = "<table-wrap.+?</table-wrap>";
+    private static String title = "((?:<title/>)|(?:<title.+?</title>))";
+    private static String secLookBehind = "((?:<SEC>)|(?:<SEC.+?>))?"; // <sec> can be followed by<body>.
+    private static String supplimentbehind = "<supplementary-material.+?</supplementary-material>";
+    private static String refList = "<ref-list.+?</ref-list>";
+    private static String boxed = "(?:<boxed-text.+?>)(?:<caption>)?";
+    
+    private static Pattern sentence = Pattern.compile(
+			"(" + sentenceFigLookbehind + "(" +secLookBehind + title +")+"+")|"+ 
+        		"("+ sentenceFigLookbehind +"("+ boxed + secLookBehind + title +"?)"+optEndTags1+")|"+
+        		"(" + sentenceFigLookbehind + wholeHeader + headerLookahead + 
+			//lookbehind and start of a normal sentence, or a match for the first sentence (at the beginning of the abstract)
+			")|" +
+			"(" + sentenceFigLookbehind + "((("+ tableWrap+")+("+Figure +")+)|(("+ Figure +")+("+ tableWrap +")+)|("+tableWrap +")+|("+ Figure+")+)" + optEndTags+")|"
+			+"("+ sentenceFigLookbehind + "((("+supplimentbehind +")+"+ optEndTags+")|(("+supplimentbehind +")+"+secLookBehind+title+")))|" 
+			+ "("+ sentenceFigLookbehind + "("+ refList +")+"+optEndTags1+")|"
+			+"(((" + sentenceFigLookbehind +""+ startSentence + 
+			")|" + beginFirstSentence + "|" + beginPara + ")" +
+			// The sentence content
+			"(.*?)(Fig(s)?\\..+?)*?" +
+			// punctuation that ends a sentence. Give prioriy to endEquation then puncNoRef
+			"(((?<!(" + endEquation + "\\s?|" + puncNoAbbrv + "\\s?|" + endPara + "\\s?))" 
+			+ "(?=(?:"  + nocapsParaLookAhead + ")))|" +
+			
+			"((?>" + endEquation + "\\s?|" + puncNoAbbrv + "\\s?|" + endPara + "\\s?)"
+			+ optCloseQuote	+ optReferenceSCI + manyEndTags + "\\s?"
+			+ "(?=(?:" + noSpaceReqLookahead + "|" + nocapsParaLookAhead + "|\\n|\\s*$)))|"+endLastSentence+"))"
+        			
+			// lookahead to beginning of next sentence
+			// end of line or end of whole string
+			,Pattern.CASE_INSENSITIVE);
+        
+    private static Pattern refSentenceRev = Pattern.compile("(.*?)" + atLeastOneRefSCI
+				 + capturePunctuation + "(\\s?(?:</P>)?)\\Z",Pattern.CASE_INSENSITIVE);
+
+
+    private static String ppStartTags = "((?:<ABSTRACT>|<BODY>|<SEC(?:.+?)>|<DIV(\\sDEPTH=\"\\d+\")?>|<P>|<P.+>|<disp-quote>|<list.+?>|<list-item>|<abstract.+?>|<statement>)*)"; 
+    private static String ppSentence = "(.+?)";
+    private static String ppEndTags = "((?:</ABSTRACT>|</BODY>|</SEC>|</DIV>|</P>|</disp-quote>|</list>|</list-item>|</boxed-text>|</statement>|<list.+?>|<list-item>)*\\s?)\\Z";
+    
+    private static Pattern pp = Pattern.compile(ppStartTags + ppSentence + ppEndTags,Pattern.CASE_INSENSITIVE);
+    private static Pattern ppHeader = Pattern.compile(".*?<HEADER.+?",Pattern.CASE_INSENSITIVE);
+    private static Pattern ppTitle = Pattern.compile(".*?<TITLE.+?>",Pattern.CASE_INSENSITIVE); 
+    private static Pattern ppFig = Pattern.compile("<fig.+?>|<table-wrap.+?>",Pattern.CASE_INSENSITIVE); 
+    private static Pattern ppCap = Pattern.compile("</caption.+?>|</fn.+?>",Pattern.CASE_INSENSITIVE); 
+    private static Pattern paraAttr = Pattern.compile("<abstract><p.+></p>",Pattern.CASE_INSENSITIVE);
+    private static Pattern suppli = Pattern.compile("<supplementary-material.+?>",Pattern.CASE_INSENSITIVE);
+    private static Pattern named = Pattern.compile("<named-content.+?>", Pattern.CASE_INSENSITIVE);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public static String removeInvalidTags(String string)
 	{
         
 	    int i=0;
 	    Vector<String> tags = new Vector<String>();
 	    
-	    Pattern closingTags = Pattern.compile("</?(.+?)>");
+	    //Pattern closingTags = Pattern.compile("</?(.+?)>");
 	    Matcher closingTagsMatcher = closingTags.matcher(string);
 	    
 	    
@@ -126,41 +267,25 @@ public class SSSplit {
 	}
 	
 	
-	public static StringInt sentenceSplit(String clearString,int sid)
-	{
-	    String badWhiteSpace = "(\t|\r|\n|\\s)";
-	    String replacement = "<\\?jarpath /\\?>|<\\?host null:8181\\?>|<\\?viewer picture\\?>";
+    public static StringInt sentenceSplit(String clearString,int sid)
+    {
+	String badWhiteSpace = "(\t|\r|\n|\\s)";
+	String replacement = "<\\?jarpath /\\?>|<\\?host null:8181\\?>|<\\?viewer picture\\?>";
         
-	    clearString = clearString.replaceAll(replacement, "");
+	//clearString = clearString.replaceAll(replacement, "");
         
-	    clearString = clearString.replaceAll(badWhiteSpace, "sapientPOO");
-	    clearString = clearString.replaceAll("(sapientPOO)+", " ");
-        
-	    clearString = clearString.replaceAll(">\\s<", "><");
-	    clearString = clearString.replaceAll("<FIGURE/>", "");
-
-	    clearString = clearString.replaceAll("<graphic.*?/>", "");
+	//clearString = clearString.replaceAll(badWhiteSpace, "sapientPOO");
+	//clearString = clearString.replaceAll("(sapientPOO)+", " ");	    
+	
+	//clearString = clearString.replaceAll(">\\s<", "><");
+	//clearString = clearString.replaceAll("<FIGURE/>", "");
+	
+	clearString = clearString.replaceAll("<graphic.*?/>", "");
+	
+	StringBuffer finalbuffer = new StringBuffer();
+	ArrayList<StringBuffer> nsentences = new ArrayList<StringBuffer>();
        
-	    StringBuffer finalbuffer = new StringBuffer();
-	    ArrayList<StringBuffer> nsentences = new ArrayList<StringBuffer>();
-	    String allowedAttrChars = "[\\w-_\2013\\.\\(\\)\\[\\]]";
-		
-	    String refSCIgeneral = "(?:(?i)(?:(?:\\d+[,\u2013])*\\d+)?(?:</IT>)?<REF(?:(?:\\sID=\"(?:\\w-)?\\w+?(?:\\s\\w+?)*\")|(?:\\sREFID=\"\\w+?\")|(?:\\stext=\"(?:refs?\\.(?:\\s)?)?(?:(?:\\d+[,�\u2013\u002D])*\\d+)?\\w*?\")|(?:\\sTYPE=\"\\w+?\"))*(?:\\s?/>|>(?:(?:refs?\\.(?:\\s)?)?(?:(?:(?:\\d+(?:<IT>)?\\w?(?:</IT>)?)|(?:(?:<IT>)?\\w(?:</IT>)?[-,\u2013])|(?:(?:<IT>)?\\w(?:</IT>)?[-,\u2013]))*(?:(?:\\d+(?:<IT>)?\\w?(?:</IT>)?)|(?:(?:<IT>)?\\w?(?:</IT>)?)))?</REF>))|(?:(?i)<xref(?:\\sid=\"(?:\\w-)?\\w+?(?:\\s\\w+?)*\")?(?:\\sref-type=\"(?:aff|app|author-notes|bibr|boxed-text|chem|contrib|corresp|disp-formula|fig|fn|kwd|list|plate|scheme|sec|statement|supplementary-material|table|table-fn|other)\")?(?:\\srid=\"(?:[-\\u2013\\w])*\")?>[-\\u2013,\\d]+</xref>)(?-i))"; 
-
-	    String refFootnote= "<SUP TYPE=\"FOOTNOTE_MARKER\"\\sID=\"" + allowedAttrChars + "+?\"/>";
-
-	    String atLeastOneRefSCI = "((?:" + refSCIgeneral + "+" + "\\)?)|" + refFootnote + "|\\))"; //there may be a bracket after the reference
         
-	    String capturePunctuation = "(\\.|\\?|(?<!\\(\\w{1,15})\\!)";
-
-	    String abbreviations = "((?i)(\\(|\\[|\\s|>|^)(al|Am|Angew|approx|Biochim|Biophys|ca|cf|Chem|Co|conc|Dr|Drs|Corp|Ed|no|No|e\\.g|p\\.p\\.m|Engl|eq|eqns?|exp|Rs|Figs?|Labs?|Dr|etc|Calc|i\\.e|Inc|Int|Lett|Ltd|p|p\\.a|Phys|Prof|prot|refs?|Rev|sect|st|vs|(?-i)(?<!(?:</SB>|(?:\\d\\s?(<IT>?))|<IT>))(?:(?:(?:[A-Z]|[a-z])?\\.)\\s?[a-z])|(?-i)(?<!(?:</SB>|(?:\\d\\s?(<IT>?))|<IT>))(?:(?:(?:[A-Z]|[a-z])\\.)?\\s?(?:(?:[A-Z]|[a-z])\\.)?\\s?[A-Z])|(?-i)(?<!(?:</SB>|(?:\\d\\s?(<IT>?))|<IT>))(?:(?:(?:[A-Z]|[a-z])\\.)?\\s?(?:(?:[A-Z]|[a-z])\\.)\\s?[a-z])|(?-i)(?<=(?:(?<!(?:</SB>|(?:\\d)))(?:(?:\\s|\\(|^)<IT>)))(?:\\s?\\w{1,10})|\\s?\\.\\s?\\.\\s?|\\())";
-        
-        
-	    // moving all references inside the punctuation so that the sentence splitting is easier
-	    Pattern refSentence = Pattern.compile("(.*?)" +  capturePunctuation + atLeastOneRefSCI,Pattern.CASE_INSENSITIVE);
-
-        Pattern abbrevs = Pattern.compile(".*?(" + abbreviations + "(?:</IT>)?)" + "$",Pattern.CASE_INSENSITIVE); 
-
         Matcher refm = refSentence.matcher(clearString);
         StringBuffer swappedString = new StringBuffer();
 
@@ -188,10 +313,7 @@ public class SSSplit {
 			    swappedString.append(c); //reference or bracket
 			    swappedString.append(b); //punctuation
 			}
-
-                	
 		}
-                
         }
 
         // anything after the last swapped reference
@@ -201,96 +323,6 @@ public class SSSplit {
         clearString = swappedString.toString();
         clearString = clearString.replaceAll(">\\.<", ">\\. <"); 
 
-        
-        String capitals = "[A-Z0-9]"; //caps and numbers may begin a sentence
-        String punctuation = "(?:\\.|\\?|(?<!\\(\\w{1,15})\\!)"; 
-      
-        String optPunctuation = punctuation + "??";
-        String endEquation = "</EQN>";
-        String endPara = "(</P>|</ABSTRACT>|</list>)";
-        String beginPara = "<P>";
-        String optStartQuote = "['\"\u201C]?";
-        String optCloseQuote = "['\"\u201D]?";
-        String optReferenceSCI = refSCIgeneral + "*";
-
-        String beginFirstSentence = "^";
-        String endLastSentence = "$";
-        String openHeader = "(<HEADER(\\sHEADER_MARKER=\""+ allowedAttrChars + "+?\")?>|<HEADER/>|<TITLE>|<TITLE/>)"; 
-        String wholeHeader = "((<BODY>)?(<DIV(\\sDEPTH=\"\\d+\")?>)?(<HEADER(\\sHEADER_MARKER=\"" + allowedAttrChars + "+?\")?>.*?</HEADER>|<HEADER/>)|<TITLE>)";               
-        String optOpenHeader = openHeader + "?";
-        
-        
-        String eqn = "<EQN(\\sID=\"" + allowedAttrChars + "+?\")?(\\sTYPE=\"" + allowedAttrChars + "+?\")?>";
-        String xref = "<XREF(\\sID=\"" + allowedAttrChars + "+?\")?(\\sTYPE=\"" + allowedAttrChars + "+?\")?>";
-        String listTag = "<list.+?>"; //13/10/09
-
-        String manyStartTags = "(" + eqn + "|" + xref +"|"+listTag + "|<BODY>|<DIV(\\sDEPTH=\"\\d+\")?>|<P>|<p.+?>|<SEC.+?>|<disp-quote>|<supplementary-material.+?>|<boxed-text.+?>|<list list-type=\"\\w{2,20}\">|<list-item>|<ABSTRACT>|<abstract.+>|<statement>|<def>)*";
-        String optEndTags = "(</XREF>|</HEADER>|<HEADER/>|</TITLE>|</boxed-text>|</list>|</list-item>|</statement>)?"; //shs
-
-        String optEndTags1 = "(</XREF>|</HEADER>|<HEADER/>|</TITLE>|</boxed-text>|<list.+?>|</list>|</list-item>|</statement>|</inline-supplementary-material>|<inline-supplementary-material/>|</related-article>|</related-object>|</address>|</alternatives>|</array>|</boxed-text>|</chem-struct-wrap>|</fig>|</fig-group>|<graphic.+?/>|</media>|</preformat>|</supplementary-material>|</table-wrap>|</table-wrap-group>|</disp-formula>|</disp-formula-group>|</element-citation>|</mixed-citation>|</nlm-citation>|</bold>|</italic>|</monospace>|</overline>|</overline-start>|</overline-end>|</roman>|</sans-serif>|</sc>|</strike>|</underline>|</underline-start>|</underline-end>|</award-id>|</funding-source>|</open-access>|</chem-struct>|<inline-formula/>|<inline-graphic/> |</private-char>|</def-list>|</list>|</tex-math>|</mml:math>|</abbrev>|</milestone-end>|</milestone-start>|</named-content>|</styled-content>|</ack> |</disp-quote>|</speech>|</statement>|</verse-group>|</fn>|</target>|</xref>|</ref>|</sub>|</sup>|</def>)*"; 
-
-        String endTags = "(</P>|</IT>|</italic>|</EQN>|</XREF></bold>|</NAMED-CONTENT>|<disp-formula>|</HEADER>|<HEADER/>|</TITLE>|</disp-quote>|</supplementary-material>|</boxed-text>|</list>|</list-item>|</statement>)"; //shs
-        String manyEndTags = endTags + "*";
-
-        String endParaOrEq = "(" + endPara+"|" + endEquation + ")\\s?"; 
-        String formatting="(<B>|<IT>|<SP>|<italic>|<BOLD>|<disp-formula>|<named-content.+?>)"; 
-        
-        String puncNoAbbrv = "(?<!" + abbreviations + "(</IT>)?)"+ punctuation + "\\s";
-        String greekLetters = "[\u0370-\u03FF\u1F00-\u1FFF]";
-        String pAttr = "<p.+?>";
-        String sentenceCommencer = "(?>" +beginPara + "|" + pAttr +"|"+ "Fig(s)?\\." + "|" + capitals + "|" + formatting + "|" + "\\[|\\(|"+greekLetters+"|\u007C)";
-        String equationCommencer = "(" + eqn + ".)";
-        String commencer = "(" + sentenceCommencer + "|" + equationCommencer + ")";
-
-        
-        String noSpaceReqLookahead =  manyStartTags + optOpenHeader + optStartQuote + commencer;
-        
-        String nocapsParaLookAhead  = "(\\s?<P>)";
-        
-        String startSentence = manyStartTags + optStartQuote + commencer;
-        
-        // For matching the end of the previous sentence
-        String sentenceFigLookbehind = "(?<=(?<!"+ abbreviations + punctuation + ")((" + endParaOrEq + ")|("+ puncNoAbbrv + ")|("
-        + optPunctuation + optEndTags + endTags + "\\s?)))";
-        
-        //for matching the start of a sentence following a header
-        String headerLookahead = "(?=(?:" + manyStartTags + optOpenHeader
-                        + optStartQuote + commencer + "))";
-
-        String Figure="<fig.+?</fig>";
-        String tableWrap = "<table-wrap.+?</table-wrap>";
-        String title = "((?:<title/>)|(?:<title.+?</title>))";
-        String secLookBehind = "((?:<SEC>)|(?:<SEC.+?>))?"; // <sec> can be followed by<body>.
-        String supplimentbehind = "<supplementary-material.+?</supplementary-material>";
-        String refList = "<ref-list.+?</ref-list>";
-        String boxed = "(?:<boxed-text.+?>)(?:<caption>)?";
-        
-        Pattern sentence = Pattern.compile(
-        		"(" + sentenceFigLookbehind + "(" +secLookBehind + title +")+"+")|"+ 
-        		"("+ sentenceFigLookbehind +"("+ boxed + secLookBehind + title +"?)"+optEndTags1+")|"+
-        		"(" + sentenceFigLookbehind + wholeHeader + headerLookahead + 
-			//lookbehind and start of a normal sentence, or a match for the first sentence (at the beginning of the abstract)
-			")|" +
-			"(" + sentenceFigLookbehind + "((("+ tableWrap+")+("+Figure +")+)|(("+ Figure +")+("+ tableWrap +")+)|("+tableWrap +")+|("+ Figure+")+)" + optEndTags+")|"
-			+"("+ sentenceFigLookbehind + "((("+supplimentbehind +")+"+ optEndTags+")|(("+supplimentbehind +")+"+secLookBehind+title+")))|" 
-			+ "("+ sentenceFigLookbehind + "("+ refList +")+"+optEndTags1+")|"
-			+"(((" + sentenceFigLookbehind +""+ startSentence + 
-			")|" + beginFirstSentence + "|" + beginPara + ")" +
-			// The sentence content
-			"(.*?)(Fig(s)?\\..+?)*?" +
-			// punctuation that ends a sentence. Give prioriy to endEquation then puncNoRef
-			"(((?<!(" + endEquation + "\\s?|" + puncNoAbbrv + "\\s?|" + endPara + "\\s?))" 
-			+ "(?=(?:"  + nocapsParaLookAhead + ")))|" +
-			
-			"((?>" + endEquation + "\\s?|" + puncNoAbbrv + "\\s?|" + endPara + "\\s?)"
-			+ optCloseQuote	+ optReferenceSCI + manyEndTags + "\\s?"
-			+ "(?=(?:" + noSpaceReqLookahead + "|" + nocapsParaLookAhead + "|\\n|\\s*$)))|"+endLastSentence+"))"
-        			
-        		
-        							
-			// lookahead to beginning of next sentence
-			// end of line or end of whole string
-			,Pattern.CASE_INSENSITIVE);
         
 
         Matcher m = sentence.matcher(clearString);
@@ -305,8 +337,6 @@ public class SSSplit {
         if(somethingFound == 0) {
 	    // ???
         }
-        Pattern refSentenceRev = Pattern.compile("(.*?)" + atLeastOneRefSCI
-				 + capturePunctuation + "(\\s?(?:</P>)?)\\Z",Pattern.CASE_INSENSITIVE);
 
         int count = 0;
         
@@ -355,21 +385,10 @@ public class SSSplit {
                 count++;
         }
         sentences = newSentences;
+
         // Post-processing sentence array to move XML tags outside the sentences
-        String ppStartTags = "((?:<ABSTRACT>|<BODY>|<SEC(?:.+?)>|<DIV(\\sDEPTH=\"\\d+\")?>|<P>|<P.+>|<disp-quote>|<list.+?>|<list-item>|<abstract.+?>|<statement>)*)"; 
-        String ppSentence = "(.+?)";
-        String ppEndTags = "((?:</ABSTRACT>|</BODY>|</SEC>|</DIV>|</P>|</disp-quote>|</list>|</list-item>|</boxed-text>|</statement>|<list.+?>|<list-item>)*\\s?)\\Z";
-       
-        Pattern pp = Pattern.compile(ppStartTags + ppSentence + ppEndTags,Pattern.CASE_INSENSITIVE);
-        Pattern ppHeader = Pattern.compile(".*?<HEADER.+?",Pattern.CASE_INSENSITIVE);
-        Pattern ppTitle = Pattern.compile(".*?<TITLE.+?>",Pattern.CASE_INSENSITIVE); 
-        Pattern ppFig = Pattern.compile("<fig.+?>|<table-wrap.+?>",Pattern.CASE_INSENSITIVE); 
-        Pattern ppCap = Pattern.compile("</caption.+?>|</fn.+?>",Pattern.CASE_INSENSITIVE); 
-        Pattern paraAttr = Pattern.compile("<abstract><p.+></p>",Pattern.CASE_INSENSITIVE);
-        Pattern suppli = Pattern.compile("<supplementary-material.+?>",Pattern.CASE_INSENSITIVE);
-        Pattern named = Pattern.compile("<named-content.+?>", Pattern.CASE_INSENSITIVE);
-        
-        int id = sid;
+
+	int id = sid;
 
         for (StringBuffer s : sentences) {
                 Matcher ppm = pp.matcher(s);
@@ -416,6 +435,8 @@ public class SSSplit {
         
         return stringInt;
 	}
+
+
     public static String getString(Node node)
     {
 	try {
@@ -444,7 +465,8 @@ public class SSSplit {
 		{
 		    for(int i=0; i<childNodes.getLength(); i++)
 			{
-			    if(childNodes.item(i).getNodeName().equalsIgnoreCase("sec")||childNodes.item(i).getNodeName().equalsIgnoreCase("statement")||childNodes.item(i).getNodeName().equalsIgnoreCase("DIV")||childNodes.item(i).getNodeName().equalsIgnoreCase("boxed-text")||childNodes.item(i).getNodeName().equalsIgnoreCase("list")||childNodes.item(i).getNodeName().equalsIgnoreCase("list-item")||childNodes.item(i).getNodeName().equalsIgnoreCase("disp-quote")||childNodes.item(i).getNodeName().equalsIgnoreCase("speech")||childNodes.item(i).getNodeName().equalsIgnoreCase("fn-group")||childNodes.item(i).getNodeName().equalsIgnoreCase("fn")||childNodes.item(i).getNodeName().equalsIgnoreCase("def-list")||childNodes.item(i).getNodeName().equalsIgnoreCase("def-item")||childNodes.item(i).getNodeName().equalsIgnoreCase("def"))
+			    String nodeNameI = childNodes.item(i).getNodeName();
+			    if(nodeNameI.equalsIgnoreCase("sec")||nodeNameI.equalsIgnoreCase("statement")||nodeNameI.equalsIgnoreCase("DIV")||nodeNameI.equalsIgnoreCase("boxed-text")||nodeNameI.equalsIgnoreCase("list")||nodeNameI.equalsIgnoreCase("list-item")||nodeNameI.equalsIgnoreCase("disp-quote")||nodeNameI.equalsIgnoreCase("speech")||nodeNameI.equalsIgnoreCase("fn-group")||nodeNameI.equalsIgnoreCase("fn")||nodeNameI.equalsIgnoreCase("def-list")||nodeNameI.equalsIgnoreCase("def-item")||nodeNameI.equalsIgnoreCase("def"))
 				{
 					NodeList grandNodes = childNodes.item(i).getChildNodes();
 
@@ -455,7 +477,7 @@ public class SSSplit {
 					
 				}
 				else
-				if(childNodes.item(i).getNodeName().equalsIgnoreCase("p"))
+				if(nodeNameI.equalsIgnoreCase("p"))
 				{
 				    NodeList graphic = ((Element)childNodes.item(i)).getElementsByTagName("graphic");
 				    NodeList xlink = ((Element)childNodes.item(i)).getElementsByTagNameNS("*", "*");
@@ -465,7 +487,7 @@ public class SSSplit {
 					    for(int s = 0; s<graphic.getLength(); s++)
 						{
 						    if(((Element)graphic.item(s)).hasAttribute("xlink:href"))
-						    graphic.item(s).getParentNode().removeChild(graphic.item(s));
+							graphic.item(s).getParentNode().removeChild(graphic.item(s));
 						}
 					}
 				    if(xlink!=null&&xlink.getLength()!=0)
@@ -508,11 +530,10 @@ public class SSSplit {
 				    {
 				    	String tobeSplitorg = getString(childNodes.item(i));
 				    	tobeSplitorg = tobeSplitorg.replaceFirst("<\\?xml.+?>","");
-				    	Pattern para = Pattern.compile("<p>|<p.+?>", Pattern.CASE_INSENSITIVE);
+
 				    	Matcher mpara = para.matcher(tobeSplitorg);
-						if(mpara.find())
+					if(mpara.find())
 						{
-						    Pattern cpara = Pattern.compile("</p>", Pattern.CASE_INSENSITIVE);
 						    Matcher cmpara = cpara.matcher(tobeSplitorg);
 					    	
 						    String tobeSplit = mpara.replaceFirst("");
@@ -554,9 +575,9 @@ public class SSSplit {
 				}
 				else
 				{
-					if(childNodes.item(i).getNodeName().equals("#text")||childNodes.item(i).getNodeName().equals("B")||childNodes.item(i).getNodeName().equals("SUP")||childNodes.item(i).getNodeName().equals("XREF")||childNodes.item(i).getNodeName().equals("IT")||childNodes.item(i).getNodeName().equals("REF")||childNodes.item(i).getNodeName().equals("SB")||childNodes.item(i).getNodeName().equals("SP")||childNodes.item(i).getNodeName().equals("ext-link"))
+					if(nodeNameI.equals("#text")||nodeNameI.equals("B")||nodeNameI.equals("SUP")||nodeNameI.equals("XREF")||nodeNameI.equals("IT")||nodeNameI.equals("REF")||nodeNameI.equals("SB")||nodeNameI.equals("SP")||nodeNameI.equals("ext-link"))
 					{
-					    if(childNodes.item(i).getNodeName().equals("ext-link"))
+					    if(nodeNameI.equals("ext-link"))
 						childNodes.item(i).setPrefix("xlink");
 						String tobeSplit = getString(childNodes.item(i));
 						tobeSplit = tobeSplit.replaceFirst("<\\?xml.+?>","");
@@ -567,7 +588,7 @@ public class SSSplit {
 
 						for(j=i+1;j<childNodes.getLength();j++)
 						{
-							if(childNodes.item(i).getNodeName().equals("#text")||childNodes.item(i).getNodeName().equals("B")||childNodes.item(i).getNodeName().equals("SUP")||childNodes.item(i).getNodeName().equals("XREF")||childNodes.item(i).getNodeName().equals("IT")||childNodes.item(i).getNodeName().equals("REF")||childNodes.item(i).getNodeName().equals("SB")||childNodes.item(i).getNodeName().equals("SP")||childNodes.item(i).getNodeName().equals("ext-link"))
+							if(nodeNameI.equals("#text")||nodeNameI.equals("B")||nodeNameI.equals("SUP")||nodeNameI.equals("XREF")||nodeNameI.equals("IT")||nodeNameI.equals("REF")||nodeNameI.equals("SB")||nodeNameI.equals("SP")||nodeNameI.equals("ext-link"))
 							{
 							    
 								String sibling = getString(childNodes.item(j));
@@ -624,7 +645,7 @@ public class SSSplit {
 							subroot.insertBefore(df, childNodes.item(i+1));
 							
 						}
-						i = i+ pTagNodes.getLength()-1;
+						i = i+ pTagNodes.getLength()-1; // why change i inside for-loop?
 					     	paperId.setNode(subroot);
 					}
 				}
@@ -633,76 +654,78 @@ public class SSSplit {
 		return paperId;
 	}
 	
+
+
 	public static Document findChildren(Document paperDoc,int id)throws Exception
 	{
 	    NodeInt paperId = new NodeInt(paperDoc,id);
-		Element root = paperDoc.getDocumentElement();
-		NodeList nodes = root.getElementsByTagName("ABSTRACT");
-		if(nodes==null||nodes.getLength()==0)
+	    Element root = paperDoc.getDocumentElement();
+	    NodeList nodes = root.getElementsByTagName("ABSTRACT");
+	    if(nodes==null||nodes.getLength()==0) // no abstract
 		{
-			nodes = paperDoc.getElementsByTagName("article");
-			if(nodes!=null && nodes.getLength()!=0)
+		    nodes = paperDoc.getElementsByTagName("article");
+		    if(nodes!=null && nodes.getLength()!=0)
 			{
-				nodes = ((Element)nodes.item(0)).getElementsByTagName("front");
-				if(nodes!=null && nodes.getLength()!=0)
+			    nodes = ((Element)nodes.item(0)).getElementsByTagName("front");
+			    if(nodes!=null && nodes.getLength()!=0)
 				{
-					nodes = ((Element)nodes.item(0)).getElementsByTagName("abstract");
-					if(nodes!=null&&nodes.getLength()!=0)
+				    nodes = ((Element)nodes.item(0)).getElementsByTagName("abstract");
+				    if(nodes!=null&&nodes.getLength()!=0) //an article-front-abstract
 					{
-						for(int i=0; i<nodes.getLength(); i++)
+					    for(int i=0; i<nodes.getLength(); i++)
 						{
-							NodeList childNodes = nodes.item(i).getChildNodes();
-							paperId = callSentenceSplitter(paperDoc, nodes.item(i),childNodes, id); //delete this node.item(i), send the ref node, before what it will be added later. node that has been recreated returning that will be good. then after coming back from the function we replace it
-							Node pTag = paperDoc.importNode(paperId.node.cloneNode(true),true);
-							nodes.item(i).getParentNode().replaceChild(pTag,nodes.item(i));
-							id = paperId.id;
+						    NodeList childNodes = nodes.item(i).getChildNodes();
+						    paperId = callSentenceSplitter(paperDoc, nodes.item(i),childNodes, id); //delete this node.item(i), send the ref node, before what it will be added later. node that has been recreated returning that will be good. then after coming back from the function we replace it
+						    Node pTag = paperDoc.importNode(paperId.node.cloneNode(true),true);
+						    nodes.item(i).getParentNode().replaceChild(pTag,nodes.item(i));
+						    id = paperId.id;
 						}
 					}
 				}
 			}
-			else
+		    else // no article
 			{
 			}
 		}
-		else
+	    else // an abstract is in 'nodes'
 		{
-			for(int i=0; i<nodes.getLength(); i++)
+		    for(int i=0; i<nodes.getLength(); i++)
 			{
-				NodeList childNodes = nodes.item(i).getChildNodes();
-				paperId = callSentenceSplitter(paperDoc, nodes.item(i),childNodes, id);
-
-				Node pTag = paperDoc.importNode(paperId.node.cloneNode(true),true);
-				root.replaceChild(pTag,nodes.item(i));
-				id = paperId.id;
+			    NodeList childNodes = nodes.item(i).getChildNodes();
+			    paperId = callSentenceSplitter(paperDoc, nodes.item(i),childNodes, id);
+			    
+			    Node pTag = paperDoc.importNode(paperId.node.cloneNode(true),true);
+			    root.replaceChild(pTag,nodes.item(i));
+			    id = paperId.id;
 			}
 		}
 
-		nodes = root.getElementsByTagName("BODY");
-		if(nodes==null||nodes.getLength()==0)
+	    nodes = root.getElementsByTagName("BODY");
+	    if(nodes==null||nodes.getLength()==0)
 		{
-			nodes = paperDoc.getElementsByTagName("article");
-			if(nodes!=null && nodes.getLength()!=0)
+		    nodes = paperDoc.getElementsByTagName("article");
+		    if(nodes!=null && nodes.getLength()!=0)
 			{
-		       		nodes = ((Element)nodes.item(0)).getElementsByTagName("body");
-	       			if(nodes!=null&&nodes.getLength()!=0)
-       				{
-       					for(int i=0; i<nodes.getLength(); i++)
+			    nodes = ((Element)nodes.item(0)).getElementsByTagName("body");
+			    if(nodes!=null&&nodes.getLength()!=0) // an article-body
+				{
+				    for(int i=0; i<nodes.getLength(); i++)
        					{
-	       					NodeList childNodes = nodes.item(i).getChildNodes();
-
-	       					paperId = callSentenceSplitter(paperDoc, nodes.item(i), childNodes, id); 
-
-						Node pTag = paperDoc.importNode(paperId.node.cloneNode(true),true);
-					        nodes.item(i).getParentNode().replaceChild(pTag,nodes.item(i));
-       						id = paperId.id;
+					    NodeList childNodes = nodes.item(i).getChildNodes();
+					    
+					    paperId = callSentenceSplitter(paperDoc, nodes.item(i), childNodes, id); 
+					    
+					    Node pTag = paperDoc.importNode(paperId.node.cloneNode(true),true);
+					    nodes.item(i).getParentNode().replaceChild(pTag,nodes.item(i));
+					    id = paperId.id;
        					}
        				}
 			}
-			else
+		    else // no article
 			{
 			}
 		}
-		else
+	    else // a body is in 'nodes'
 		{
 			for(int i=0; i<nodes.getLength(); i++)
 			{
@@ -714,8 +737,12 @@ public class SSSplit {
 			}
 		}
 
-		return paperDoc;
+	    return paperDoc;
 	}
+
+
+
+
 	public static Document getTitle(Document paperDoc, NodeList child, String str)
 	{
 		if(child!=null&&child.getLength()!=0)
@@ -779,6 +806,9 @@ public class SSSplit {
 	    }
 		return null;
 	}
+
+
+
 	public static String sentenceExtraction(Document paperDoc, String name) throws Exception {
 		try{
 		    Element root = paperDoc.getDocumentElement();
@@ -819,23 +849,22 @@ public class SSSplit {
 
 
 		}
-		catch(Exception xp)
-		{
+		catch(Exception xp) {
 			xp.printStackTrace();
 		}
-	String fileString = getString(paperDoc);
-	
-	Pattern xmlDeclaration = Pattern.compile("(<\\?xml.+?><PAPER>)(.*)\\Z",Pattern.DOTALL);
-    Matcher xmatch = xmlDeclaration.matcher(fileString);
-    if (xmatch.find()) {
-            String a = xmatch.group(1);
-            String b = xmatch.group(2);
-            a = a + "<mode2 name='" + name + "' hasDoc='yes'" + " version= '" + sapientVersion + "'/>";
-            fileString = a + b;
-    }
 
-        return fileString;
+		String fileString = getString(paperDoc);
+		Pattern xmlDeclaration = Pattern.compile("(<\\?xml.+?><PAPER>)(.*)\\Z",Pattern.DOTALL);
+		Matcher xmatch = xmlDeclaration.matcher(fileString);
+		if (xmatch.find()) {
+		    String a = xmatch.group(1);
+		    String b = xmatch.group(2);
+		    a = a + "<mode2 name='" + name + "' hasDoc='yes'" + " version= '" + sapientVersion + "'/>";
+		    fileString = a + b;
+		}
+		
+		return fileString;
 	} 
-
+    
 }
 
