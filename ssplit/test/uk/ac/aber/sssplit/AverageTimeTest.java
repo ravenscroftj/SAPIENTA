@@ -17,9 +17,13 @@ public class AverageTimeTest {
     	
         for(int i=0; i < 100; i++) {
         	System.out.println(String.format("Running splitter - Iteration #%d", i));
-        	accum += timeOperation();
+        	long timeTaken= timeOperation();
+            System.out.println(String.format("Took %dms",timeTaken ));
+            accum += timeTaken;
+            System.out.println(String.format("Running average: %f", accum / (i+1)) );
         }
         
+
         System.out.println(String.format("Average time of splitter: %f", accum / 100) );
 
     }
