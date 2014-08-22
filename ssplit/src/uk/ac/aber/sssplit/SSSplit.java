@@ -91,14 +91,17 @@ public class SSSplit {
 
     private static String atLeastOneRefSCI = "((?:" + refSCIgeneral + "+" + "\\)?)|" + refFootnote + "|\\))"; //there may be a bracket after the reference
         
+    // capturePunctuation is either a . or a ? or 
+    // an exclamation mark that isn't preceded by 1-15 word chars.
     private static String capturePunctuation = "(\\.|\\?|(?<!\\(\\w{1,15})\\!)";
     
     private static String abbreviations = "((?i)(\\(|\\[|\\s|>|^)(al|Am|Angew|approx|Biochim|Biophys|ca|cf|Chem|Co|conc|Dr|Drs|Corp|Ed|no|No|e\\.g|p\\.p\\.m|Engl|eq|eqns?|exp|Rs|Figs?|Labs?|Dr|etc|Calc|i\\.e|Inc|Int|Lett|Ltd|p|p\\.a|Phys|Prof|prot|refs?|Rev|sect|st|vs|(?-i)(?<!(?:</SB>|(?:\\d\\s?(<IT>?))|<IT>))(?:(?:(?:[A-Z]|[a-z])?\\.)\\s?[a-z])|(?-i)(?<!(?:</SB>|(?:\\d\\s?(<IT>?))|<IT>))(?:(?:(?:[A-Z]|[a-z])\\.)?\\s?(?:(?:[A-Z]|[a-z])\\.)?\\s?[A-Z])|(?-i)(?<!(?:</SB>|(?:\\d\\s?(<IT>?))|<IT>))(?:(?:(?:[A-Z]|[a-z])\\.)?\\s?(?:(?:[A-Z]|[a-z])\\.)\\s?[a-z])|(?-i)(?<=(?:(?<!(?:</SB>|(?:\\d)))(?:(?:\\s|\\(|^)<IT>)))(?:\\s?\\w{1,10})|\\s?\\.\\s?\\.\\s?|\\())";
  
     // moving all references inside the punctuation so that the sentence splitting is easier
-    private static Pattern refSentence = Pattern.compile("(.*?)" +  capturePunctuation + atLeastOneRefSCI,Pattern.CASE_INSENSITIVE);
 
-    private static Pattern abbrevs = Pattern.compile(".*?(" + abbreviations + "(?:</IT>)?)" + "$",Pattern.CASE_INSENSITIVE); 
+    private static Pattern refSentence = Pattern.compile(capturePunctuation + atLeastOneRefSCI,Pattern.CASE_INSENSITIVE);
+
+    private static Pattern abbrevs = Pattern.compile("(" + abbreviations + "(?:</IT>)?)" + "$",Pattern.CASE_INSENSITIVE); 
 
 
 
@@ -190,8 +193,7 @@ public class SSSplit {
 			// end of line or end of whole string
 			,Pattern.CASE_INSENSITIVE);
         
-    private static Pattern refSentenceRev = Pattern.compile("(.*?)" + atLeastOneRefSCI
-				 + capturePunctuation + "(\\s?(?:</P>)?)\\Z",Pattern.CASE_INSENSITIVE);
+    private static Pattern refSentenceRev = Pattern.compile(atLeastOneRefSCI + capturePunctuation + "(\\s?(?:</P>)?)\\Z",Pattern.CASE_INSENSITIVE);
 
 
     private static String ppStartTags = "((?:<ABSTRACT>|<BODY>|<SEC(?:.+?)>|<DIV(\\sDEPTH=\"\\d+\")?>|<P>|<P.+>|<disp-quote>|<list.+?>|<list-item>|<abstract.+?>|<statement>)*)"; 
@@ -199,8 +201,10 @@ public class SSSplit {
     private static String ppEndTags = "((?:</ABSTRACT>|</BODY>|</SEC>|</DIV>|</P>|</disp-quote>|</list>|</list-item>|</boxed-text>|</statement>|<list.+?>|<list-item>)*\\s?)\\Z";
     
     private static Pattern pp = Pattern.compile(ppStartTags + ppSentence + ppEndTags,Pattern.CASE_INSENSITIVE);
-    private static Pattern ppHeader = Pattern.compile(".*?<HEADER.+?",Pattern.CASE_INSENSITIVE);
-    private static Pattern ppTitle = Pattern.compile(".*?<TITLE.+?>",Pattern.CASE_INSENSITIVE); 
+    //    private static Pattern ppHeader = Pattern.compile(".*?<HEADER.+?",Pattern.CASE_INSENSITIVE);
+    private static Pattern ppHeader = Pattern.compile("<HEADER.",Pattern.CASE_INSENSITIVE);
+    //private static Pattern ppTitle = Pattern.compile(".*?<TITLE.+?>",Pattern.CASE_INSENSITIVE); 
+    private static Pattern ppTitle = Pattern.compile("<TITLE.+?>",Pattern.CASE_INSENSITIVE); 
     private static Pattern ppFig = Pattern.compile("<fig.+?>|<table-wrap.+?>",Pattern.CASE_INSENSITIVE); 
     private static Pattern ppCap = Pattern.compile("</caption.+?>|</fn.+?>",Pattern.CASE_INSENSITIVE); 
     private static Pattern paraAttr = Pattern.compile("<abstract><p.+></p>",Pattern.CASE_INSENSITIVE);
@@ -271,59 +275,56 @@ public class SSSplit {
     {
 	String badWhiteSpace = "(\t|\r|\n|\\s)";
 	String replacement = "<\\?jarpath /\\?>|<\\?host null:8181\\?>|<\\?viewer picture\\?>";
-        
-	//clearString = clearString.replaceAll(replacement, "");
-        
-	//clearString = clearString.replaceAll(badWhiteSpace, "sapientPOO");
-	//clearString = clearString.replaceAll("(sapientPOO)+", " ");	    
-	
-	//clearString = clearString.replaceAll(">\\s<", "><");
-	//clearString = clearString.replaceAll("<FIGURE/>", "");
-	
+        	
 	clearString = clearString.replaceAll("<graphic.*?/>", "");
 	
 	StringBuffer finalbuffer = new StringBuffer();
 	ArrayList<StringBuffer> nsentences = new ArrayList<StringBuffer>();
        
-        
-        Matcher refm = refSentence.matcher(clearString);
+	Matcher refm = refSentence.matcher(clearString);
+
         StringBuffer swappedString = new StringBuffer();
+	int start = 0;
 
-        while (refm.find()) {
-                String a = refm.group(1); //sentence
-                String b = refm.group(2); //punctuation
-                String c = refm.group(3); //reference
+	// Here we're swapping any references that appear after certain punctuation 
+	// so that they're moved before the punctuation.
+	while(refm.find()) {
+	    int matchstart = refm.start();
+	    int matchend   = refm.end();
+	    String a = clearString.substring(start,matchstart); //sentence
+	    String b = refm.group(1); //punctuation
+	    String c = refm.group(2); //reference
 
-                Matcher abbrevm=abbrevs.matcher(a);
-                if (abbrevm.find()){
-                    String ab = abbrevm.group(1);
-                	swappedString.append(a); // don't change order
-                	swappedString.append(b);
-                	swappedString.append(c);
-                }else {
-		    if((a.endsWith("0")||a.endsWith("1")||a.endsWith("2")||a.endsWith("3")||a.endsWith("4")||a.endsWith("5")||a.endsWith("6")||a.endsWith("7")||a.endsWith("8")||a.endsWith("9"))&&(c.startsWith("1")||c.startsWith("2")||c.startsWith("3")||c.startsWith("4")||c.startsWith("5")||c.startsWith("6")||c.startsWith("7")||c.startsWith("8")||c.startsWith("9"))&&b.equals(".")) 
-                	{
-			    swappedString.append(a); // don't change order
-			    swappedString.append(b);
-			    swappedString.append(c);
-                	}
-		    else
-			{
-			    swappedString.append(a); //sentence
-			    swappedString.append(c); //reference or bracket
-			    swappedString.append(b); //punctuation
-			}
-		}
-        }
-
-        // anything after the last swapped reference
-        String endbit = clearString.substring(swappedString.length(),
-                        clearString.length());
+	    Matcher abbrevm=abbrevs.matcher(a);
+	    if (abbrevm.find()){
+		// don't change order
+		swappedString.append(a); //sentence
+		swappedString.append(b); //punctuation
+		swappedString.append(c); //reference or bracket
+	    } else { 
+		if((a.endsWith("0")||a.endsWith("1")||a.endsWith("2")||a.endsWith("3")||a.endsWith("4")||a.endsWith("5")||a.endsWith("6")||a.endsWith("7")||a.endsWith("8")||a.endsWith("9"))&&(c.startsWith("1")||c.startsWith("2")||c.startsWith("3")||c.startsWith("4")||c.startsWith("5")||c.startsWith("6")||c.startsWith("7")||c.startsWith("8")||c.startsWith("9"))&&b.equals(".")) 
+		    {
+			// don't change order
+			swappedString.append(a); //sentence
+			swappedString.append(b); //punctuation
+			swappedString.append(c); //reference or bracket
+		    }
+		else
+		    {
+			// change order
+			swappedString.append(a); //sentence
+			swappedString.append(c); //reference or bracket
+			swappedString.append(b); //punctuation
+		    }
+	    }
+	    start = matchend;
+	}
+	// also pick up anything after the last matched reference
+        String endbit = clearString.substring(start, clearString.length());
         swappedString.append(endbit);
         clearString = swappedString.toString();
-        clearString = clearString.replaceAll(">\\.<", ">\\. <"); 
 
-        
+        clearString = clearString.replaceAll(">\\.<", ">\\. <");         
 
         Matcher m = sentence.matcher(clearString);
         ArrayList<StringBuffer> sentences = new ArrayList<StringBuffer>();
@@ -349,38 +350,37 @@ public class SSSplit {
 
                 // if sentence finishes with reference + punctuation, swap the two over
                 if (refmRev.find()) {
-                        String a = refmRev.group(1); //sentence
-                        String b = refmRev.group(2); //reference or bracket or both
+		    int matchstart = refmRev.start();
+		    int matchend = refmRev.end();
+
+		    String a = s.substring(0,matchstart); //sentence
+		    String b = refmRev.group(1); //reference or bracket or both
                         
-                        String c = refmRev.group(3); //punctuation
-                        String d = refmRev.group(4); //space and/or </P>
+		    String c = refmRev.group(2); //punctuation
+		    String d = refmRev.group(3); //space and/or </P>
 
-                        StringBuffer ns = new StringBuffer();
-
-                        if (b.endsWith(")")) { 
-			    ns.append(a); //sentence
-			    ns.append(b); //bracket
-			    ns.append(c); //punctuation
-			    ns.append(d); //space
-                        } else {
-			    if(!b.startsWith("<"))
-				{
-				    int index=b.indexOf("<");
-				    String b1=b.substring(0, index); // end index exclusive
-				    String b2=b.substring(index);
-				    a=a.concat(b1);
-				    b=b2;
-				}
-			    ns.append(a); //sentence
-                            ns.append(c); //punctuation
-                            ns.append(b); //reference
-                            ns.append(d); //space
-                        	
-                        }
-                        newSentences.add(ns);
+		    if (b.endsWith(")")) { 
+			// no change to the sentence
+			newSentences.add(s);
+		    } else {
+			StringBuffer ns = new StringBuffer();
+			if(!b.startsWith("<"))
+			    {
+				int index=b.indexOf("<");
+				String b1=b.substring(0, index); // end index exclusive
+				String b2=b.substring(index);
+				a=a.concat(b1);
+				b=b2;
+			    }
+			ns.append(a); //sentence
+			ns.append(c); //punctuation
+			ns.append(b); //reference
+			ns.append(d); //space
+			newSentences.add(ns);                        
+		    }
                         
                 } else {
-                	newSentences.add(s);
+		    newSentences.add(s);
                 }
                 count++;
         }
