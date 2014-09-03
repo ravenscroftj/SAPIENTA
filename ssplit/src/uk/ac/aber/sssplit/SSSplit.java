@@ -302,7 +302,8 @@ public class SSSplit {
 		swappedString.append(b); //punctuation
 		swappedString.append(c); //reference or bracket
 	    } else { 
-		if((a.endsWith("0")||a.endsWith("1")||a.endsWith("2")||a.endsWith("3")||a.endsWith("4")||a.endsWith("5")||a.endsWith("6")||a.endsWith("7")||a.endsWith("8")||a.endsWith("9"))&&(c.startsWith("1")||c.startsWith("2")||c.startsWith("3")||c.startsWith("4")||c.startsWith("5")||c.startsWith("6")||c.startsWith("7")||c.startsWith("8")||c.startsWith("9"))&&b.equals(".")) 
+        if(a.matches("(.*)[0-9]$") && c.matches("^[0-9](.*)") && b.equals("."))
+		//if((a.endsWith("0")||a.endsWith("1")||a.endsWith("2")||a.endsWith("3")||a.endsWith("4")||a.endsWith("5")||a.endsWith("6")||a.endsWith("7")||a.endsWith("8")||a.endsWith("9"))&&(c.startsWith("1")||c.startsWith("2")||c.startsWith("3")||c.startsWith("4")||c.startsWith("5")||c.startsWith("6")||c.startsWith("7")||c.startsWith("8")||c.startsWith("9"))&&b.equals(".")) 
 		    {
 			// don't change order
 			swappedString.append(a); //sentence

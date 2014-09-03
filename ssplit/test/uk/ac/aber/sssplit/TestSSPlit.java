@@ -1,15 +1,11 @@
 package uk.ac.aber.sssplit;
 
 import java.io.File;
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.Assert;
-
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 
-import org.custommonkey.xmlunit.*;
+import org.custommonkey.xmlunit.Diff;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class TestSSPlit {
 
