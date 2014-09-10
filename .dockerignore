@@ -1,0 +1,7 @@
+.git
+*.pyc
+*.sw[p|o]
+env/
+build/
+dist/
+bin/
