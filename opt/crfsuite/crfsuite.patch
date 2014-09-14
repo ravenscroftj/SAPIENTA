@@ -1,0 +1,11 @@
+--- crfsuite/configure.in	2014-09-13 14:57:05.611928982 +0100
++++ crfsuite_patch/configure.in	2014-09-13 14:58:06.619926096 +0100
+@@ -30,7 +30,7 @@
+ AM_INIT_AUTOMAKE(crfsuite, 0.12)
+ AC_CONFIG_HEADERS(config.h)
+ AM_MAINTAINER_MODE
+-AM_C_PROTOTYPES
++dnl AM_C_PROTOTYPES
+ 
+ 
+ dnl ------------------------------------------------------------------
