@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
@@ -38,6 +39,11 @@ public class SplitServer implements Runnable,MqttCallback{
 		
 	}
 	
+	public void shutdown() throws MqttPersistenceException, MqttException, InterruptedException{
+		client.publish(properties.getProperty(PROPERTY_SHUTDOWN_TOPIC), 
+				new MqttMessage());
+	}
+	
 	public void run(){
 
 		try {
@@ -51,14 +57,21 @@ public class SplitServer implements Runnable,MqttCallback{
 	private void splitServerLoop() throws MqttException{
 		terminated = false;
 		
+		logger.info("Starting MQTT Connection...");
+		
 		client = new MqttClient(properties.getProperty(PROPERTY_BROKER), 
 				properties.getProperty(PROPERTY_CLIENTID));
 		
 		client.connect();
 		
 		//subscribe to incoming and shutdown topics
+		logger.info("Subscribing to incoming workloads on " + properties.getProperty(PROPERTY_TOPIC_INCOMING));
 		client.subscribe(properties.getProperty(PROPERTY_TOPIC_INCOMING));
+
+		logger.info("Subscribing to shutdown request messages on " + properties.getProperty(PROPERTY_SHUTDOWN_TOPIC));
 		client.subscribe(properties.getProperty(PROPERTY_SHUTDOWN_TOPIC));
+		
+		logger.info("Subscribed and ready to go.");
 		
 		client.setCallback(this);
 		while(!terminated) {
@@ -68,6 +81,18 @@ public class SplitServer implements Runnable,MqttCallback{
 			} catch (InterruptedException e) {
 				logger.error("Sleep loop interrupted", e);
 			}
+		}
+		
+		logger.info("Unsubscribing from new incoming work...");
+		client.unsubscribe(properties.getProperty(PROPERTY_TOPIC_INCOMING));
+		client.unsubscribe(properties.getProperty(PROPERTY_TOPIC_OUTGOING));
+		
+		logger.info("Waiting up to 30 seconds for existing jobs to finish...");
+		try {
+			dispatcher.shutdown();
+			dispatcher.awaitTermination(30, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			logger.warn("Could not wait for work to finish... shutting down");
 		}
 		
 		logger.info("Closing MQTT Connection...");
@@ -131,7 +156,6 @@ public class SplitServer implements Runnable,MqttCallback{
 	public synchronized void sendResult(MqttMessage message) throws MqttPersistenceException, MqttException {
 		
 		if( client != null && client.isConnected()){
-			
 			client.publish(properties.getProperty(PROPERTY_TOPIC_OUTGOING), message);
 			
 		}else{

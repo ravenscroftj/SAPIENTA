@@ -1,19 +1,14 @@
 package uk.ac.aber.sssplit;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.StringBufferInputStream;
+import java.io.StringReader;
+import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-
-import sun.misc.BASE64Decoder;
 
 public class SplitTask implements Runnable{
 	
@@ -33,40 +28,28 @@ public class SplitTask implements Runnable{
 		
 		JSONObject value = (JSONObject)JSONValue.parse(new InputStreamReader(bin));
 		
-		File processFile = null;
-		
-		if(value.containsKey("filename")) {
-			//we're dealing with a local file
-			processFile = new File((String)value.get("filename"));
-		}else if(value.containsKey("filedata")) {
+		if(value.containsKey("filedata")) {
+			
 			//we're dealing with encoded data
 			try {
-				processFile = stashFile((String)value.get("filedata"));
-			} catch (IOException e) {
+				String result = XMLSentSplit.processXML(new StringReader((String)value.get("filedata")), 
+						(String)value.get("docname"));
+				
+				HashMap<String, String> responseMap = new HashMap<>();
+				responseMap.put("filedata", result);
+				responseMap.put("docname", (String)value.get("docname"));
+				
+				JSONObject obj = new JSONObject(responseMap);
+				
+				MqttMessage responseMessage = new MqttMessage(obj.toJSONString().getBytes());
+				requester.sendResult(responseMessage);
+				
+			} catch (Exception e) {
 				logger.error("SSSPlit task error", e);
 			}
 			
 		}
 		
-
-		XMLSentSplit.processFile(processFile.getName(), processFile.getParent());
-		
-		
 	}
-	
-	
-	private File stashFile(String data) throws IOException {
-		
-		BASE64Decoder b64 = new BASE64Decoder();
-		File processFile = File.createTempFile("sssplit", ".tmp");
-		FileOutputStream fout = new FileOutputStream(processFile);
-		ByteArrayInputStream bin = new ByteArrayInputStream(data.getBytes());
-		b64.decodeBuffer(bin, fout);
-		fout.close();
-		
-		return processFile;
-	}
-	
-
 
 }
