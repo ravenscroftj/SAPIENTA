@@ -15,5 +15,8 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="jar/log4j-1.2.17.jar"/>
 	<classpathentry kind="lib" path="jar/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="jar/commons-cli-1.1.jar"/>
+	<classpathentry kind="lib" path="jar/commons-io-1.2.jar"/>
+	<classpathentry kind="lib" path="jar/rabbitmq-client.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -1,22 +1,19 @@
 package uk.ac.aber.sssplit;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
+
+import com.rabbitmq.client.QueueingConsumer.Delivery;
 
 public class SplitTask implements Runnable{
 	
 	private SplitServer requester;
-	private MqttMessage message;
+	private Delivery message;
 	private Logger logger = Logger.getLogger(SplitTask.class);
 	
-	public SplitTask(SplitServer requester, MqttMessage message) {
+	public SplitTask(SplitServer requester, Delivery message) {
 		this.requester = requester;
 		this.message = message;
 	}
@@ -24,31 +21,24 @@ public class SplitTask implements Runnable{
 	@Override
 	public void run() {
 		
-		ByteArrayInputStream bin = new ByteArrayInputStream(message.getPayload());
+		logger.info("Starting worker thread");
 		
-		JSONObject value = (JSONObject)JSONValue.parse(new InputStreamReader(bin));
+		Map<String,Object> headers = message.getProperties().getHeaders();
+		String docname = (String)headers.get("docname").toString();
 		
-		if(value.containsKey("filedata")) {
+		
+		//we're dealing with encoded data
+		try {
+			String result = XMLSentSplit.processXML(new StringReader(new String(message.getBody())), 
+					docname);
 			
-			//we're dealing with encoded data
-			try {
-				String result = XMLSentSplit.processXML(new StringReader((String)value.get("filedata")), 
-						(String)value.get("docname"));
-				
-				HashMap<String, String> responseMap = new HashMap<>();
-				responseMap.put("filedata", result);
-				responseMap.put("docname", (String)value.get("docname"));
-				
-				JSONObject obj = new JSONObject(responseMap);
-				
-				MqttMessage responseMessage = new MqttMessage(obj.toJSONString().getBytes());
-				requester.sendResult(responseMessage);
-				
-			} catch (Exception e) {
-				logger.error("SSSPlit task error", e);
-			}
+			logger.info(String.format("Completed splitting %s, sending back.", docname));
+			requester.sendResult(result.getBytes(), message.getProperties());
 			
+		} catch (Exception e) {
+			logger.error("SSSPlit task error", e);
 		}
+		
 		
 	}
 

@@ -11,26 +11,32 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 
-public class SplitServer implements Runnable,MqttCallback{
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
+
+public class SplitServer implements Runnable{
 	
-	public static String PROPERTY_SHUTDOWN_TOPIC  = "sssplit.topic.shutdown";
-	public static String PROPERTY_TOPIC_INCOMING  = "sssplit.topic.incoming";
-	public static String PROPERTY_TOPIC_OUTGOING  = "sssplit.topic.outgoing";
-	public static String PROPERTY_BROKER = "sssplit.broker"; 
-	public static String PROPERTY_CLIENTID = "sssplit.clientid";
+	public static final String PROPERTY_SHUTDOWN_TOPIC  = "sssplit.topic.shutdown";
+	public static final String PROPERTY_TOPIC_INCOMING  = "sssplit.topic.incoming";
+	public static final String PROPERTY_TOPIC_OUTGOING  = "sssplit.topic.outgoing";
+	public static final String PROPERTY_BROKER = "sssplit.broker"; 
+	public static final String PROPERTY_CLIENTID = "sssplit.clientid";
+	public static final String PROPERTY_EXCHANGE_NAME = "sssplit.exchange_name";
 	
 	Properties properties;
 	private boolean terminated;
 	private Logger logger;
 	private ExecutorService dispatcher;
-	private MqttClient client = null;
+	
+	private Connection connection;
+	private Channel channel;
 	
 	public SplitServer(Properties properties) {
 		this.properties = properties;
@@ -39,54 +45,84 @@ public class SplitServer implements Runnable,MqttCallback{
 		
 	}
 	
-	public void shutdown() throws MqttPersistenceException, MqttException, InterruptedException{
-		client.publish(properties.getProperty(PROPERTY_SHUTDOWN_TOPIC), 
-				new MqttMessage());
+	public void shutdown() throws IOException{
+		channel.basicPublish(properties.getProperty(PROPERTY_EXCHANGE_NAME),
+				properties.getProperty(PROPERTY_SHUTDOWN_TOPIC), 
+				null,"".getBytes());
 	}
 	
 	public void run(){
 
 		try {
 			splitServerLoop();
-		} catch (MqttException e) {
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ShutdownSignalException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ConsumerCancelledException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
 	}
 	
-	private void splitServerLoop() throws MqttException{
+	private void splitServerLoop() throws IOException, ShutdownSignalException, ConsumerCancelledException, InterruptedException{
 		terminated = false;
 		
-		logger.info("Starting MQTT Connection...");
+		logger.info("Starting MQ Connection...");
 		
-		client = new MqttClient(properties.getProperty(PROPERTY_BROKER), 
-				properties.getProperty(PROPERTY_CLIENTID));
+		ConnectionFactory factory = new ConnectionFactory();
+		factory.setHost(properties.getProperty(PROPERTY_BROKER));
 		
-		client.connect();
+		connection = factory.newConnection();
+		
+		channel = connection.createChannel();
+		
+		channel.exchangeDeclare(properties.getProperty(PROPERTY_EXCHANGE_NAME), "topic");
+		
+		//set up queue and bind to exchange
+		String queue = channel.queueDeclare().getQueue();
 		
 		//subscribe to incoming and shutdown topics
+		channel.queueBind(queue, properties.getProperty(PROPERTY_EXCHANGE_NAME), 
+				properties.getProperty(PROPERTY_TOPIC_INCOMING));
+		
+		channel.queueBind(queue, properties.getProperty(PROPERTY_EXCHANGE_NAME), 
+				properties.getProperty(PROPERTY_SHUTDOWN_TOPIC));
+		
 		logger.info("Subscribing to incoming workloads on " + properties.getProperty(PROPERTY_TOPIC_INCOMING));
-		client.subscribe(properties.getProperty(PROPERTY_TOPIC_INCOMING));
-
-		logger.info("Subscribing to shutdown request messages on " + properties.getProperty(PROPERTY_SHUTDOWN_TOPIC));
-		client.subscribe(properties.getProperty(PROPERTY_SHUTDOWN_TOPIC));
 		
 		logger.info("Subscribed and ready to go.");
 		
-		client.setCallback(this);
+		
+		QueueingConsumer consumer = new QueueingConsumer(channel);
+		
+		//set up consumer with auto ACK off
+		channel.basicConsume(queue, false, consumer);
+		
+		String shutdown_topic = properties.getProperty(PROPERTY_SHUTDOWN_TOPIC);
+		
+		//do the loop
 		while(!terminated) {
-			//sleep 
-			try {
-				Thread.sleep(200);
-			} catch (InterruptedException e) {
-				logger.error("Sleep loop interrupted", e);
+			QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+			
+			if(delivery.getEnvelope().getRoutingKey().equals(shutdown_topic)) {
+				terminated = true;
+			}else{
+				String docname = delivery.getProperties().getHeaders().get("docname").toString();
+				logger.info("Received workload '" + docname + "' dispatching to workers...");
+				dispatcher.submit(new SplitTask(this, delivery));
 			}
+			
+			channel.basicAck(delivery.getEnvelope().getDeliveryTag(), true);
 		}
 		
 		logger.info("Unsubscribing from new incoming work...");
-		client.unsubscribe(properties.getProperty(PROPERTY_TOPIC_INCOMING));
-		client.unsubscribe(properties.getProperty(PROPERTY_TOPIC_OUTGOING));
-		
+
 		logger.info("Waiting up to 30 seconds for existing jobs to finish...");
 		try {
 			dispatcher.shutdown();
@@ -95,9 +131,10 @@ public class SplitServer implements Runnable,MqttCallback{
 			logger.warn("Could not wait for work to finish... shutting down");
 		}
 		
-		logger.info("Closing MQTT Connection...");
-		client.disconnect();
-		client.close();
+		logger.info("Closing MQ Connection...");
+		
+		channel.close();
+		connection.close();
 		
 		logger.info("Night night...");
 		
@@ -126,37 +163,13 @@ public class SplitServer implements Runnable,MqttCallback{
 	     serverThread.start();
 		
 	}
-
-	@Override
-	public void connectionLost(Throwable cause) {
-		logger.error("Lost connection to MQTT broker", cause);
-		terminated = true;
-	}
-
-	@Override
-	public void messageArrived(String topic, MqttMessage message)
-			throws Exception {
-		
-		if (topic.equals(properties.getProperty(PROPERTY_SHUTDOWN_TOPIC))) {
-			terminated = true;
-			logger.info("Shutdown request received, stopping server...");
-		}else{
-			//if its not a shutdown request, its a splitter request.
-			dispatcher.submit(new SplitTask(this, message));
-		}
-		
-	}
-
-	@Override
-	public void deliveryComplete(IMqttDeliveryToken token) {
-		// TODO Auto-generated method stub
-		
-	}
 	
-	public synchronized void sendResult(MqttMessage message) throws MqttPersistenceException, MqttException {
+	public synchronized void sendResult(byte[] message, BasicProperties msgProps) throws IOException {
 		
-		if( client != null && client.isConnected()){
-			client.publish(properties.getProperty(PROPERTY_TOPIC_OUTGOING), message);
+		
+		if( channel != null && channel.isOpen()){
+			
+			channel.basicPublish("", msgProps.getReplyTo(), msgProps, message);
 			
 		}else{
 			logger.warn("Cannot send message, client is not connected");
