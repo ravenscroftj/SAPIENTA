@@ -4,7 +4,11 @@
 	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="lib" path="dist/lib/SSSplit2.jar"/>
 	<classpathentry kind="lib" path="jar/hamcrest-all-1.3.jar"/>
-	<classpathentry kind="lib" path="jar/junit-4.11.jar"/>
+	<classpathentry kind="lib" path="jar/junit-4.11.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/james/Downloads/rabbitmq-java-client-javadoc-3.4.2.zip!/rabbitmq-java-client-javadoc-3.4.2"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="jar/xmlunit-1.5.jar"/>
 	<classpathentry kind="lib" path="jar/xom-1.2.6.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
@@ -17,6 +21,10 @@
 	<classpathentry kind="lib" path="jar/json-simple-1.1.1.jar"/>
 	<classpathentry kind="lib" path="jar/commons-cli-1.1.jar"/>
 	<classpathentry kind="lib" path="jar/commons-io-1.2.jar"/>
-	<classpathentry kind="lib" path="jar/rabbitmq-client.jar"/>
+	<classpathentry kind="lib" path="jar/rabbitmq-client.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/james/Downloads/rabbitmq-java-client-javadoc-3.4.2.zip!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
