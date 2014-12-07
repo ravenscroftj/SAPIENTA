@@ -133,6 +133,9 @@ def main():
         if(options.annotate):
             options.split = True
 
+        
+        inqueue = "sapienta.service.pdfx"
+        exit_after = inqueue
                 
         if(ext == ".pdf"):
 
@@ -140,35 +143,22 @@ def main():
             
         elif( ext == ".xml"):
             logging.info("No conversion needed on %s" , infile)
-            split_infile = infile
-
+            inqueue    = "sapienta.sssplit.incoming"
         else:
             logging.info("Unrecognised format for file %s", infile)
             sys.exit(0)
 
         if(options.split):
             logging.info("Splitting sentences in %s", infile)
+            exit_after = "sapienta.sssplit.incoming"
             
-            s = SentenceSplitter()
-            outfile = name + "_split.xml"
-            
-            eb = options.extra_blacklist.split(",")
-
-            s.split(split_infile, outfile, extra_blacklist=eb)
-
-            anno_infile = outfile
-
         if(options.annotate):
-            a = Annotator()
-
             #build annotated filename
-            outfile = name + "_annotated.xml"
             logging.info("Annotating file and saving to %s", outfile)
-            a.annotate( anno_infile, outfile )
-
+            exit_after = "sapienta.sssplit.annotate"
 
         #do the queue
-        client.queue_job("sapienta.service.pdfx", infile)
+        client.queue_job(inqueue, infile, exit_after)
 
     #wait for jobs to complete
     client.wait_for_jobs()
