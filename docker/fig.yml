@@ -1,0 +1,18 @@
+sapienta:
+    build: ./sapienta
+    command: python2 /build/sapienta/processing/base.py
+    links:
+        - candc
+        - mq
+        - sssplit
+
+sssplit:
+    build: ./sssplit
+    links:
+        - mq
+    
+
+candc:
+    build: ./candc
+mq:
+    image: dockerfile/rabbitmq
