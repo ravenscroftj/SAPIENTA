@@ -219,6 +219,10 @@ class SoapClient:
         if s == "":
             return u""
 
+        # If this is a one-char sentence, just return here
+        if len(s) == 1:
+            return s
+
         #separate out punctuation , ; : ? is moved a space away from the words
         s = re.sub(r'(?<!(\s))(\,|\:|\?|\;)(?=(?:\s))', lambda m: " " + (m.group(2) or ''), s)
         
