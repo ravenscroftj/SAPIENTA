@@ -1,0 +1,172 @@
+#import xml.etree.cElementTree as ET
+import sys
+import re
+import lxml.etree as ET
+
+highLevelContainerElements = ["DIV", "sec"]
+pLevelContainerElements = ["P", "region"]
+abstractLevelContainerElements = ["abstract", "ABSTRACT"]
+
+class SSSplit:
+
+    _sid = 0
+
+    def nextSID(self):
+        self._sid += 1
+        return str(self._sid)
+
+    def split(self, filename, outname=None):
+        tree = ET.parse(filename)
+        self.root = tree.getroot()
+
+        #first find and split abstract(s) (special case p-level container)
+        for container in abstractLevelContainerElements:
+            for el in self.root.findall(container):
+                self.split_plevel_container(el)
+
+        #now we handle remaining high level containers such as <DIV> or <sec>
+        for container in highLevelContainerElements:
+            for el in self.root.iter(container):
+                print "--- %s" % el
+                self.split_high_level_container(el)
+
+        if outname != None:
+            tree.write(outname)
+        else:
+            return ET.tostring(self.root)
+
+    def split_high_level_container(self, containerEl):
+        """A high level container is a section or similar
+        
+        High-level containers are container elements that contain p-level
+        containers and do not have text or sentences as direct descendents.
+        
+        Examples of high level containers are <DIV> in SciXML and <section> 
+        in DoCo XML"""
+
+        for containerType in pLevelContainerElements:
+            for el in set(containerEl.findall(containerType)):
+                self.split_plevel_container(el)
+
+        
+
+    def split_plevel_container(self, containerEl):
+        """A p-level container is a paragraph or similar
+        
+        P-level containers are containers that can contain text nodes as direct
+        descendents i.e. <P> in SCIXML or a <region> in DoCoXML.
+
+        This method splits sentences contained in P level containers taking into
+        account the presence of sub-elements such as <xref> tyoes
+        """
+
+        #get a list of all child elements in containerNode to analyse
+        siblings = list(containerEl)
+
+        #if the container element has text insert in front of other siblings
+        if containerEl.text != None:
+            siblings = [ containerEl.text] + siblings
+
+        self.splitSentences(siblings, containerEl)
+
+    def splitSentences(self, nodeList, containerEl):
+
+        self.newNodeList = []
+        self.newSentence = []
+
+        while len(nodeList) > 0:
+            
+            el = nodeList.pop(0)
+
+            if isinstance(el,str) or isinstance(el,unicode):
+                self.splitTextBlock(el)
+
+            else:
+                self.newSentence.append(el)
+                if el.tail != None:
+                    self.splitTextBlock(el.tail)
+
+        # when we run out of child nodes for p-level container we know
+        # we're at the end of the current sentence 
+        # (sentences don't cross <p></p> boundaries)
+        self.endCurrentSentence()
+        # now we can be confident that we're finished with this container
+        # so we can generate final xml form
+        self.endPLevelContainer(containerEl)
+
+    def splitTextBlock(self, txt, beforeNode=None):
+        pattern = re.compile('(\.|\?|\!)(?=\s*[A-Z0-9$])')
+
+        m = pattern.search(txt)
+        last = 0
+
+        while m != None:
+
+            self.newSentence.append(txt[last:m.end()])
+            print self.newSentence
+            last = m.end()
+
+            #if we match digits around a dot then its probably a number so skip
+            if (not re.match("[0-9]\.[0-9]", txt[m.start()-1:m.end()+1])):
+                self.endCurrentSentence()
+
+            m = pattern.search(txt, last)
+
+        #the remnants of the string are the beginning of the next sentence
+        self.newSentence.append(txt[last:])
+
+    def endCurrentSentence(self):
+        """Ends the current sentence being accumulated
+        """
+        self.newNodeList.append(self.newSentence)
+        self.newSentence = []
+
+    def endPLevelContainer(self, pContainer):
+        """Process updates/splits in the current p-level container"""
+        #prune all children of p container
+        pContainer.text = None
+        for el in pContainer:
+            pContainer.remove(el)
+
+        #generate sentences and append to container
+        for sent in self.newNodeList:
+            self.generateSentence(sent,pContainer)
+
+
+    def generateSentence(self, sent, parent):
+        """Takes a list of strings and elements and turn into an <s> element
+        
+        Using the element tree subelement factory, create a sentence from
+        a list of str and legal descendents (i.e. xref, ref)
+        """
+        
+        sentEl = ET.SubElement(parent, "s", attrib={"sid": self.nextSID() })
+
+        prevEl = None
+        for item in sent:
+            #are we dealing with text (string or unicode)
+            if isinstance(item,str) or isinstance(item,unicode):
+                #if prev item is not set this is the first text node in the sentence
+                if prevEl == None:
+                    if sentEl.text != None:
+                        sentEl.text += item
+                    else:
+                        sentEl.text = item
+                #if prev item is set, this will be tacked on as the 'tail'
+                else:
+                    if prevEl.text != None:
+                        prevEl.text += item
+                    else:
+                        prevEl.tail = item
+
+            #else we're dealing with an element not text
+            else:
+                prevEl = item
+                sentEl.append(item)
+    
+
+
+if __name__ == "__main__":
+    splitter = SSSplit()
+    print splitter.split("b103844n_nosents.xml")
+    
