@@ -6,6 +6,7 @@ import lxml.etree as ET
 highLevelContainerElements = ["DIV", "sec"]
 pLevelContainerElements = ["P", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
+referenceElements = ["REF"]
 
 class SSSplit:
 
@@ -14,6 +15,16 @@ class SSSplit:
     def nextSID(self):
         self._sid += 1
         return str(self._sid)
+
+    def normalize_sents(self):
+
+
+        for s in self.root.iter("s"):
+
+            #set sentence ID
+            s.set("sid", self.nextSID())
+
+
 
     def split(self, filename, outname=None):
         tree = ET.parse(filename)
@@ -29,6 +40,9 @@ class SSSplit:
             for el in self.root.iter(container):
                 print "--- %s" % el
                 self.split_high_level_container(el)
+
+        #assign sentence ids
+        self.normalize_sents()
 
         if outname != None:
             tree.write(outname)
@@ -47,7 +61,6 @@ class SSSplit:
         for containerType in pLevelContainerElements:
             for el in set(containerEl.findall(containerType)):
                 self.split_plevel_container(el)
-
         
 
     def split_plevel_container(self, containerEl):
@@ -82,9 +95,19 @@ class SSSplit:
                 self.splitTextBlock(el)
 
             else:
-                self.newSentence.append(el)
-                if el.tail != None:
-                    self.splitTextBlock(el.tail)
+            
+                if len(self.newSentence) < 1 and el.tag in referenceElements:
+
+                    if el.tail != None:
+                        self.splitTextBlock(el.tail)
+
+                        el.tail = None
+
+                    self.newNodeList[-1].append(el)
+                else:
+                    self.newSentence.append(el)
+                    if el.tail != None:
+                        self.splitTextBlock(el.tail)
 
         # when we run out of child nodes for p-level container we know
         # we're at the end of the current sentence 
@@ -95,16 +118,18 @@ class SSSplit:
         self.endPLevelContainer(containerEl)
 
     def splitTextBlock(self, txt, beforeNode=None):
-        pattern = re.compile('(\.|\?|\!)(?=\s*[A-Z0-9$])')
+        pattern = re.compile('(\.|\?|\!)(?=\s*[A-Z0-9$])|\.$')
 
         m = pattern.search(txt)
         last = 0
 
         while m != None:
-
-            self.newSentence.append(txt[last:m.end()])
-            print self.newSentence
+            
+            if txt[last:m.end()] != '':
+                self.newSentence.append(txt[last:m.end()])
+            
             last = m.end()
+
 
             #if we match digits around a dot then its probably a number so skip
             if (not re.match("[0-9]\.[0-9]", txt[m.start()-1:m.end()+1])):
@@ -113,13 +138,16 @@ class SSSplit:
             m = pattern.search(txt, last)
 
         #the remnants of the string are the beginning of the next sentence
-        self.newSentence.append(txt[last:])
+        if txt[last:] != '':
+            self.newSentence.append(txt[last:])
+
 
     def endCurrentSentence(self):
         """Ends the current sentence being accumulated
         """
-        self.newNodeList.append(self.newSentence)
-        self.newSentence = []
+        if self.newSentence != []:
+            self.newNodeList.append(self.newSentence)
+            self.newSentence = []
 
     def endPLevelContainer(self, pContainer):
         """Process updates/splits in the current p-level container"""
@@ -129,23 +157,29 @@ class SSSplit:
             pContainer.remove(el)
 
         #generate sentences and append to container
+        prevSent = None
         for sent in self.newNodeList:
-            self.generateSentence(sent,pContainer)
+            prevSent = self.generateSentence(sent,pContainer, prevSent)
+            
 
 
-    def generateSentence(self, sent, parent):
+    def generateSentence(self, sent, parent, prevSent):
         """Takes a list of strings and elements and turn into an <s> element
         
         Using the element tree subelement factory, create a sentence from
         a list of str and legal descendents (i.e. xref, ref)
         """
         
-        sentEl = ET.SubElement(parent, "s", attrib={"sid": self.nextSID() })
+        sentEl = ET.SubElement(parent, "s")
 
         prevEl = None
+        refOnly = True
+
         for item in sent:
             #are we dealing with text (string or unicode)
             if isinstance(item,str) or isinstance(item,unicode):
+                #refOnly is no longer true because we found text
+                refOnly = False
                 #if prev item is not set this is the first text node in the sentence
                 if prevEl == None:
                     if sentEl.text != None:
@@ -163,6 +197,21 @@ class SSSplit:
             else:
                 prevEl = item
                 sentEl.append(item)
+
+        print prevSent
+
+        
+        if refOnly:
+            print sent
+            parent.remove(sentEl)
+
+            for item in sent:
+                prevSent.append(item)
+
+            return prevSent
+        else:
+            return sentEl
+
     
 
 
