@@ -83,19 +83,29 @@ class SSSplit:
         self.splitSentences(siblings, containerEl)
 
     def splitSentences(self, nodeList, containerEl):
+        """This xml-aware method builds sentence lists using nodes"""
 
+        #new node list is the list of <s> elements to be created
         self.newNodeList = []
+        #newsentence is the accumulator for sentence elements and strings
         self.newSentence = []
 
+        #first we walk through all nodes inside the container
         while len(nodeList) > 0:
             
             el = nodeList.pop(0)
 
+            #if the node is a string (or unicode)
+            #run text splitting routine on it
             if isinstance(el,str) or isinstance(el,unicode):
                 self.splitTextBlock(el)
 
+            # if node is an element, append it to the current sentence
             else:
             
+                #if the node is a <REF> and this is a new sentence, chances are
+                #it should be appended to the previous sentence
+                # e.g. "this is the end of my sentence. [1]" 
                 if len(self.newSentence) < 1 and el.tag in referenceElements:
 
                     if el.tail != None:
@@ -113,6 +123,17 @@ class SSSplit:
         # we're at the end of the current sentence 
         # (sentences don't cross <p></p> boundaries)
         self.endCurrentSentence()
+
+        for i,sent in enumerate(self.newNodeList[:]):
+
+            if isinstance(sent[0],str) or isinstance(sent[0],unicode):
+                if re.match("^\s*[a-z]", sent[0]):
+                    print sent[0]
+                    self.newNodeList[i-1].extend(sent)
+                    del self.newNodeList[i]
+
+
+
         # now we can be confident that we're finished with this container
         # so we can generate final xml form
         self.endPLevelContainer(containerEl)
