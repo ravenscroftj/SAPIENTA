@@ -7,6 +7,7 @@ highLevelContainerElements = ["DIV", "sec"]
 pLevelContainerElements = ["P", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
 referenceElements = ["REF"]
+commonAbbreviations = ['Fig']
 
 class SSSplit:
 
@@ -38,7 +39,6 @@ class SSSplit:
         #now we handle remaining high level containers such as <DIV> or <sec>
         for container in highLevelContainerElements:
             for el in self.root.iter(container):
-                print "--- %s" % el
                 self.split_high_level_container(el)
 
         #assign sentence ids
@@ -124,13 +124,21 @@ class SSSplit:
         # (sentences don't cross <p></p> boundaries)
         self.endCurrentSentence()
 
+
+
         for i,sent in enumerate(self.newNodeList[:]):
 
             if isinstance(sent[0],str) or isinstance(sent[0],unicode):
                 if re.match("^\s*[a-z]", sent[0]):
-                    print sent[0]
                     self.newNodeList[i-1].extend(sent)
-                    del self.newNodeList[i]
+                    
+                    if len(self.newNodeList) == i:
+                        print i
+                        print sent
+                        print self.newNodeList
+                        print "HOW?"
+
+                    self.newNodeList.remove(sent)
 
 
 
@@ -144,7 +152,19 @@ class SSSplit:
         m = pattern.search(txt)
         last = 0
 
+
         while m != None:
+
+            # assume that the punctuation matched is the end of the sentence
+            # (until otherwise proven)
+            endOfSent = True
+
+            #get last word before full stop (if not full stop we don't care)
+            lastword = re.search("[\(\[]?(\S+)\.$", txt[last:m.end()])
+
+            #if the last word is a common abbreviation, skip end of sentence
+            if lastword != None and lastword.group(1) in commonAbbreviations:
+                endOfSent = False
             
             if txt[last:m.end()] != '':
                 self.newSentence.append(txt[last:m.end()])
@@ -152,8 +172,15 @@ class SSSplit:
             last = m.end()
 
 
+            #if the dot matches the end of a common abbreviation, skip end of sentence
+
             #if we match digits around a dot then its probably a number so skip
-            if (not re.match("[0-9]\.[0-9]", txt[m.start()-1:m.end()+1])):
+            if re.match("[0-9]\.[0-9]", txt[m.start()-1:m.end()+1]):
+                endOfSent = False
+
+
+            #check if we should be ending the sentence this time around the loop
+            if endOfSent:
                 self.endCurrentSentence()
 
             m = pattern.search(txt, last)
@@ -161,6 +188,9 @@ class SSSplit:
         #the remnants of the string are the beginning of the next sentence
         if txt[last:] != '':
             self.newSentence.append(txt[last:])
+
+        # note: we don't end sentence by default at this point because this could
+        # just be the end of the text block and the start of a reference or formatting
 
 
     def endCurrentSentence(self):
@@ -219,11 +249,7 @@ class SSSplit:
                 prevEl = item
                 sentEl.append(item)
 
-        print prevSent
-
-        
         if refOnly:
-            print sent
             parent.remove(sentEl)
 
             for item in sent:
