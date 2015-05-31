@@ -11,20 +11,13 @@ commonAbbreviations = ['Fig']
 
 class SSSplit:
 
-    _sid = 0
-
-    def nextSID(self):
-        self._sid += 1
-        return str(self._sid)
 
     def normalize_sents(self):
 
-
-        for s in self.root.iter("s"):
+        for i,s in enumerate(self.root.iter("s")):
 
             #set sentence ID
-            s.set("sid", self.nextSID())
-
+            s.set("sid", str(i+1))
 
 
     def split(self, filename, outname=None):
@@ -132,12 +125,6 @@ class SSSplit:
                 if re.match("^\s*[a-z]", sent[0]):
                     self.newNodeList[i-1].extend(sent)
                     
-                    if len(self.newNodeList) == i:
-                        print i
-                        print sent
-                        print self.newNodeList
-                        print "HOW?"
-
                     self.newNodeList.remove(sent)
 
 
