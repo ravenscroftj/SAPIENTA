@@ -38,9 +38,9 @@ class SSSplit:
         self.normalize_sents()
 
         if outname != None:
-            tree.write(outname)
+            tree.write(outname, pretty_print=True)
         else:
-            return ET.tostring(self.root)
+            return ET.tostring(self.root, pretty_print=True)
 
     def split_high_level_container(self, containerEl):
         """A high level container is a section or similar
@@ -111,13 +111,13 @@ class SSSplit:
                     self.newSentence.append(el)
                     if el.tail != None:
                         self.splitTextBlock(el.tail)
+                        #now remove the 'old' tail since the new one will be appended
+                        el.tail = None
 
         # when we run out of child nodes for p-level container we know
         # we're at the end of the current sentence 
         # (sentences don't cross <p></p> boundaries)
         self.endCurrentSentence()
-
-
 
         for i,sent in enumerate(self.newNodeList[:]):
 
@@ -127,13 +127,12 @@ class SSSplit:
                     
                     self.newNodeList.remove(sent)
 
-
-
         # now we can be confident that we're finished with this container
         # so we can generate final xml form
         self.endPLevelContainer(containerEl)
 
     def splitTextBlock(self, txt, beforeNode=None):
+        txt = txt.strip()
         pattern = re.compile('(\.|\?|\!)(?=\s*[A-Z0-9$])|\.$')
 
         m = pattern.search(txt)
@@ -184,6 +183,7 @@ class SSSplit:
         """Ends the current sentence being accumulated
         """
         if self.newSentence != []:
+            print self.newSentence
             self.newNodeList.append(self.newSentence)
             self.newSentence = []
 
@@ -226,8 +226,8 @@ class SSSplit:
                         sentEl.text = item
                 #if prev item is set, this will be tacked on as the 'tail'
                 else:
-                    if prevEl.text != None:
-                        prevEl.text += item
+                    if prevEl.tail != None:
+                        prevEl.tail += item
                     else:
                         prevEl.tail = item
 
