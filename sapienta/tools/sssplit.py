@@ -7,7 +7,7 @@ highLevelContainerElements = ["DIV", "sec"]
 pLevelContainerElements = ["P", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
 referenceElements = ["REF"]
-commonAbbreviations = ['Fig', 'Ltd', 'St']
+commonAbbreviations = ['Fig', 'Ltd', 'St', 'al']
 
 class SSSplit:
 
@@ -19,10 +19,21 @@ class SSSplit:
             #set sentence ID
             s.set("sid", str(i+1))
 
+    def load_authors(self):
+        """Parse authors from citations and add to do not split list"""
+
+        self.authors = []
+
+        for el in self.root.iter('AUTHOR'):
+            self.authors.append(" ".join(list(el.itertext())))
+
 
     def split(self, filename, outname=None):
         tree = ET.parse(filename)
         self.root = tree.getroot()
+
+        #load list of referenced authors for sentence splitting purposes
+        self.load_authors()
 
         #first find and split abstract(s) (special case p-level container)
         for container in abstractLevelContainerElements:
@@ -119,13 +130,11 @@ class SSSplit:
         # (sentences don't cross <p></p> boundaries)
         self.endCurrentSentence()
 
-        for i,sent in enumerate(self.newNodeList[:]):
-
-            if isinstance(sent[0],str) or isinstance(sent[0],unicode):
-                if re.match("^\s*[a-z]", sent[0]):
-                    self.newNodeList[i-1].extend(sent)
-                    
-                    self.newNodeList.remove(sent)
+#         for i,sent in enumerate(self.newNodeList[:]):
+# 
+#             if isinstance(sent[0],str) or isinstance(sent[0],unicode):
+#                 self.newNodeList[i-1].extend(sent)
+#                 self.newNodeList.remove(sent)
 
         # now we can be confident that we're finished with this container
         # so we can generate final xml form
@@ -146,10 +155,20 @@ class SSSplit:
             endOfSent = True
 
             #get last word before full stop (if not full stop we don't care)
-            lastword = re.search("[\(\[]?(\S+)\.$", txt[last:m.end()])
+            lastmatch = re.search("[\(\[]?(\S+)\.$", txt[last:m.end()])
+            
+            if lastmatch != None:
+                lastword = lastmatch.group(1)
+            else:
+                lastword = None
+            
 
             #if the last word is a common abbreviation, skip end of sentence
-            if lastword != None and lastword.group(1) in commonAbbreviations:
+            if lastword != None and lastword in commonAbbreviations:
+                endOfSent = False
+                
+            #if the last word is a single letter then it is usually an initial
+            if lastword != None and len(lastword) == 1 and lastword.isupper():
                 endOfSent = False
             
             if txt[last:m.end()] != '':

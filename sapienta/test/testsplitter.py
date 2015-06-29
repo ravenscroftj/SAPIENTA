@@ -93,6 +93,14 @@ def getManualSentences( paperid ):
 
 
 def main():
+    
+    matchedManual = 0
+    matchedSSSPlit = 0
+    
+    totalSentsMatchedSSSplit = 0
+    totalSentsMatchedManual = 0
+    totalSents = 0
+    papers = 0
 
     unsplit = os.path.join(TEST_FILES_PATH, "noSents")
     for root, dirs, files in os.walk(unsplit):
@@ -108,6 +116,9 @@ def main():
 
                 print "--------------------------------------------"
                 print "In paper: %s" % paperid
+                
+                matchesManual  = True
+                matchesSSSplit = True
 
                 msents = getManualSentences(paperid)
                 asents = getSplitSentences(paperid)
@@ -129,10 +140,43 @@ def main():
                     print "Splitter: \t",asents[s]
                     print "SSPlit:   \t", sssents[s]
                     print "--------------------"
+                    
+                    try:
+                        assert msents[s]['first'] == asents[s]['first']
+                        assert msents[s]['last'] == asents[s]['last']
+                        totalSentsMatchedManual += 1
+                    except:
+                        matchesManual = False
+                        
+                                            
+                    try:
+                        assert sssents[s]['first'] == asents[s]['first']
+                        assert sssents[s]['last'] == asents[s]['last']
+                        totalSentsMatchedSSSplit += 1
+                    except:
+                        matchesSSSplit = False
+                        
+                    totalSents += 1
+                        
 
                 print "-------------------------------------------"
+                
+                papers += 1
+                
+                if matchesManual:
+                    matchedManual += 1
+                    
+                if matchesSSSplit:
+                    matchedSSSPlit += 1
+                    
+    print "----------------------------------"
+    
+    print "%i / %i papers matched manual split" % (matchedManual, papers )
+    print "%i / %i papers matched old sssplit implementation" % (matchedSSSPlit, papers)
 
-
+    print "-----------------------------"
+    print "Total sentences that matched (SSSplit) %i/%i (%i%%)" %(totalSentsMatchedSSSplit, totalSents, totalSentsMatchedSSSplit*100/totalSents)
+    print "Total sentences that matched (Manual) %i/%i (%i%%)" % (totalSentsMatchedManual, totalSents, totalSentsMatchedManual*100/totalSents)
 if __name__ == "__main__":
     main()
 
