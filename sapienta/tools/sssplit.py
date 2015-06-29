@@ -7,7 +7,7 @@ highLevelContainerElements = ["DIV", "sec"]
 pLevelContainerElements = ["P", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
 referenceElements = ["REF"]
-commonAbbreviations = ['Fig']
+commonAbbreviations = ['Fig', 'Ltd', 'St']
 
 class SSSplit:
 
@@ -183,7 +183,7 @@ class SSSplit:
         """Ends the current sentence being accumulated
         """
         if self.newSentence != []:
-            print self.newSentence
+            #print self.newSentence
             self.newNodeList.append(self.newSentence)
             self.newSentence = []
 
