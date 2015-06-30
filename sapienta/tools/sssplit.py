@@ -112,12 +112,15 @@ class SSSplit:
                 # e.g. "this is the end of my sentence. [1]" 
                 if len(self.newSentence) < 1 and el.tag in referenceElements:
 
+                    textProc = None
                     if el.tail != None:
-                        self.splitTextBlock(el.tail)
-
+                        textProc = el.tail
                         el.tail = None
 
                     self.newNodeList[-1].append(el)
+                    
+                    if textProc != None:
+                        self.splitTextBlock(textProc)
                 else:
                     self.newSentence.append(el)
                     if el.tail != None:
