@@ -7,7 +7,7 @@ highLevelContainerElements = ["DIV", "sec"]
 pLevelContainerElements = ["P", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
 referenceElements = ["REF"]
-commonAbbreviations = ['Fig', 'Ltd', 'St', 'al']
+commonAbbreviations = ['Fig', 'Ltd', 'St', 'al', 'ca']
 
 class SSSplit:
 
@@ -110,7 +110,8 @@ class SSSplit:
                 #if the node is a <REF> and this is a new sentence, chances are
                 #it should be appended to the previous sentence
                 # e.g. "this is the end of my sentence. [1]" 
-                if len(self.newSentence) < 1 and el.tag in referenceElements:
+                if (len(self.newSentence) < 1 and el.tag in referenceElements
+                    and len(self.newNodeList) > 0):
 
                     textProc = None
                     if el.tail != None:
@@ -234,6 +235,8 @@ class SSSplit:
 
         prevEl = None
         refOnly = True
+        
+
 
         for item in sent:
             #are we dealing with text (string or unicode)
@@ -257,6 +260,13 @@ class SSSplit:
             else:
                 prevEl = item
                 sentEl.append(item)
+                
+        if ((isinstance(sent[0],str) or isinstance(sent[0],unicode)) and 
+            sent[0][0].islower() and prevSent != None) :
+            for item in sentEl:
+                prevSent.append(item)
+            parent.remove(sentEl)
+            return
 
         if refOnly:
             parent.remove(sentEl)
