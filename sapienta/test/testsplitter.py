@@ -90,6 +90,19 @@ def getManualSentences( paperid ):
     
     return sentences
 
+def compareSents(sentList1, sentList2):
+    maxSents = max(len(sentList1),len(sentList2))
+    minSents = min(len(sentList1),len(sentList2))
+    matchingSents = 0
+    
+    for s in range(0, minSents):
+        if ((sentList1[s]['first'] == sentList2[s]['first']) and 
+            (sentList1[s]['last'] == sentList2[s]['last'])):
+            
+            matchingSents += 1
+            
+    return matchingSents, maxSents, (matchingSents*100/maxSents)
+
 
 
 def main():

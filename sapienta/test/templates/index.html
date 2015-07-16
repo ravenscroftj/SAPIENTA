@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    
+
+    <title>SSSplit test utility</title>
+    
+    <style type="text/css">
+    body {
+	  padding-top: 70px;
+	  padding-bottom: 30px;
+	}
+	
+	.theme-dropdown .dropdown-menu {
+	  position: static;
+	  display: block;
+	  margin-bottom: 20px;
+	}
+	
+	.theme-showcase > p > .btn {
+	  margin: 5px 0;
+	}
+	
+	.theme-showcase .navbar .container {
+	  width: auto;
+	}
+    </style>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+
+<!-- sockets.io -->
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+
+<!-- data tables -->
+<link rel="stylesheet" href="//cdn.datatables.net/1.10.7/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.css">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body role="document">
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">SSSplit Test</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <!--  <li class="active"><a href="#">Home</a></li> -->
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container theme-showcase" role="main">
+
+
+      <div class="page-header">
+        <h1>Splitter Stats</h1>
+      </div>
+      
+      <p>Found <span id="foundPapersTotal"><img src="/static/ajaxload.gif" alt="Refreshing..."></span> test papers</p>
+      <p>
+        <button type="button" id="corpusRescanBtn" class="btn btn-lg btn-default">Re-scan test corpus</button>
+        <button type="button" id="runTestBtn" class="btn btn-lg btn-primary">Run Test</button>
+      </p>
+      
+      <p>
+      	
+      	<h2>Currently matching the manual splitter <span id="overallPercent">-</span>% of the time</h2>
+      	
+      </p>
+
+
+
+      <div class="page-header">
+        <h1>Test Papers</h1>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <table id="paperTable" class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Manual Sentences</th>
+                <th>Automatic Sentences</th>
+                <th>Old SSSplit Sentences</th>
+                <th>Match (%)<th>
+              </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
+
+      <div class="page-header">
+        <h1>Paper Inspector <span id="paperInspectorTableTitle"></span><a name="inspector"></a></h1>
+      </div>
+      <div id="paperInspectorDiv" class="row">
+      <table id="paperInspectorTable" class="table">
+      	<thead>
+      		<tr>
+      			<th>Sentence #</th>
+      			<th>Manual First Word</th>
+      			<th>Manual Last Word</th>
+      			<th>Auto First Word</th>
+      			<th>Auto Last Word</th>
+      		</tr>
+      	</thead>
+      	<tbody>
+      	</tbody>
+      </table>
+      </div>
+
+
+
+    </div> <!-- /container -->
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+	<script src="//cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js"></script>
+	<script src="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.js"></script>
+    <script type="text/javascript" src="/static/control.js"></script>
+  </body>
+</html>
