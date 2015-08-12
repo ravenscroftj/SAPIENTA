@@ -3,14 +3,22 @@ import sys
 import re
 import lxml.etree as ET
 
+
 highLevelContainerElements = ["DIV", "sec"]
 pLevelContainerElements = ["P", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
 referenceElements = ["REF"]
-commonAbbreviations = ['Fig', 'Ltd', 'St', 'al', 'ca']
+commonAbbreviations = ['Fig','Figs', 'Ltd', 'St', 'al', 'ca', 'vs', 'viz', 'prot', 'Co', 'Ltd', 'No']
+
+from sapienta.tools.mlsplit import text_to_features
+
+def is_str(s):
+    return isinstance(s,str) or isinstance(s,unicode)
+
 
 class SSSplit:
 
+    classifier = None
 
     def normalize_sents(self):
 
@@ -84,7 +92,43 @@ class SSSplit:
         if containerEl.text != None:
             siblings = [ containerEl.text] + siblings
 
+        #self.splitSentencesML(siblings, containerEl)
         self.splitSentences(siblings, containerEl)
+        
+    def splitSentencesML(self, nodeList, containerEl):
+        """Use machine learning model to do sentence splitting"""
+        
+        tokens = []
+        for node in nodeList:
+            if is_str(node):
+                tokens += node.strip().split(" ")
+            else:
+                tail = node.tail
+                node.tail = None
+                tokens.append(node)
+                
+                if tail != None:
+                    tokens += tail.strip().split(" ")
+        
+        self.splitTokens(tokens)
+        
+        self.endPLevelContainer(containerEl)
+        
+                    
+    def splitTokens(self, tokens):
+        
+        self.newNodeList = []
+        self.newSentence = []
+        
+        for tok, features in zip(tokens, text_to_features(tokens)):
+            
+            self.newSentence.append(tok)
+            
+            if self.classifier.classify(features):
+                self.endCurrentSentence()
+                
+        self.endCurrentSentence()
+                
 
     def splitSentences(self, nodeList, containerEl):
         """This xml-aware method builds sentence lists using nodes"""
@@ -101,7 +145,7 @@ class SSSplit:
 
             #if the node is a string (or unicode)
             #run text splitting routine on it
-            if isinstance(el,str) or isinstance(el,unicode):
+            if is_str(el):
                 self.splitTextBlock(el)
 
             # if node is an element, append it to the current sentence
@@ -134,19 +178,19 @@ class SSSplit:
         # (sentences don't cross <p></p> boundaries)
         self.endCurrentSentence()
 
-#         for i,sent in enumerate(self.newNodeList[:]):
-# 
-#             if isinstance(sent[0],str) or isinstance(sent[0],unicode):
-#                 self.newNodeList[i-1].extend(sent)
-#                 self.newNodeList.remove(sent)
-
         # now we can be confident that we're finished with this container
         # so we can generate final xml form
         self.endPLevelContainer(containerEl)
 
     def splitTextBlock(self, txt, beforeNode=None):
-        txt = txt.strip()
-        pattern = re.compile('(\.|\?|\!)(?=\s*[A-Z0-9$])|\.$')
+        
+        # first, if the text starts with a capital letter and
+        # current sentence is not empty -we got it wrong - 
+        # end current sentence now.
+        if(re.match("^[\(\[]?[A-Z]", txt) and len(self.newSentence) > 0):
+            self.endCurrentSentence()
+        
+        pattern = re.compile('(\.|\?|\!)(?=\s*[\[\(A-Z0-9$])|\.$')
 
         m = pattern.search(txt)
         last = 0
@@ -175,7 +219,7 @@ class SSSplit:
             if lastword != None and len(lastword) == 1 and lastword.isupper():
                 endOfSent = False
             
-            if txt[last:m.end()] != '':
+            if txt[last:m.end()].strip() != '':
                 self.newSentence.append(txt[last:m.end()])
             
             last = m.end()
@@ -185,6 +229,10 @@ class SSSplit:
 
             #if we match digits around a dot then its probably a number so skip
             if re.match("[0-9]\.[0-9]", txt[m.start()-1:m.end()+1]):
+                endOfSent = False
+                
+            #if we match lower case letters it could be an abbreviation like e.g. or i.e.
+            if re.match("[a-z]\.[a-z]", txt[m.start()-1:m.end()+1]):
                 endOfSent = False
 
 
@@ -236,11 +284,9 @@ class SSSplit:
         prevEl = None
         refOnly = True
         
-
-
         for item in sent:
             #are we dealing with text (string or unicode)
-            if isinstance(item,str) or isinstance(item,unicode):
+            if is_str(item):
                 #refOnly is no longer true because we found text
                 refOnly = False
                 #if prev item is not set this is the first text node in the sentence
@@ -260,15 +306,15 @@ class SSSplit:
             else:
                 prevEl = item
                 sentEl.append(item)
+            
                 
-        if ((isinstance(sent[0],str) or isinstance(sent[0],unicode)) and 
-            sent[0][0].islower() and prevSent != None) :
+        if (is_str(sent[0]) and sent[0][0].islower() and prevSent != None):
             for item in sentEl:
                 prevSent.append(item)
             parent.remove(sentEl)
             return
 
-        if refOnly:
+        if refOnly and prevSent != None:
             parent.remove(sentEl)
 
             for item in sent:

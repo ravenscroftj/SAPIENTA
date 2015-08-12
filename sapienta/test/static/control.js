@@ -67,10 +67,14 @@ $(document).ready(function(){
 					
 					var limit = Math.min( data.auto.length, data.manual.length );
 					
+					var awords = data.awords;
+					var mwords = data.mwords;
+					
 					for(var i=0; i < limit; i++) {
 						
 						var man  = data.manual[i];
 						var auto = data.auto[i];
+						
 						var row_class = "danger";
 						
 						if(man.first == auto.first && man.last == auto.last) {
@@ -79,10 +83,10 @@ $(document).ready(function(){
 						
 						$("#paperInspectorTable tbody").append("<tr class=\"" + row_class + "\">"+
 								"<td>" + (i+1) + "</td>" +
-								"<td>" + man.first + "</td>" +
-								"<td>" + man.last  + "</td>" +
-								"<td>" + auto.first + "</td>" + 
-								"<td>" + auto.last  + "</td></tr>");
+								"<td>" + mwords[man.first] + "</td>" +
+								"<td>" + mwords[man.last]  + "</td>" +
+								"<td>" + awords[auto.first] + "</td>" + 
+								"<td>" + awords[auto.last]  + "</td></tr>");
 						
 					}
 				});

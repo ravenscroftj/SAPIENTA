@@ -46,10 +46,10 @@ def open_socketio():
 def inspect_paper(paperid):
     print paperid
     
-    manualSents = testsplitter.getManualSentences(paperid)
-    newSents    = testsplitter.getSplitSentences(paperid)
+    manualSents,mwords = testsplitter.getManualSentences(paperid)
+    newSents,awords    = testsplitter.getSplitSentences(paperid, None)
     
-    emit('paper-inspect-result', {'manual' : manualSents, 'auto' : newSents})
+    emit('paper-inspect-result', {'manual' : manualSents, 'mwords':mwords, 'auto' : newSents, 'awords' : awords})
     
 @socketio.on('runsplitter', namespace='/sapienta')
 def run_splitter():
@@ -59,9 +59,9 @@ def run_splitter():
     totalMatches = 0
     
     for paper in test_papers:
-        newSplitResults    = testsplitter.getSplitSentences(paper['paper_id'])
+        newSplitResults, splitWords    = testsplitter.getSplitSentences(paper['paper_id'], None)
         ssSplitResults     = testsplitter.getSSSplitResult(paper['paper_id'])
-        manualSplitResults = testsplitter.getManualSentences(paper['paper_id'])
+        manualSplitResults, manWords = testsplitter.getManualSentences(paper['paper_id'])
         
         paper['auto_sents'] = len(newSplitResults)
         paper['sssplit_sents'] = len(ssSplitResults)
@@ -75,9 +75,9 @@ def run_splitter():
         if matchpercent > 75:
             colclass = "bg-success"
         elif matchpercent > 50:
-            colclass = "#bg-warning"
+            colclass = "bg-warning"
         else:
-            colclass = "#bg-danger"
+            colclass = "bg-danger"
             
         paper['match'] = "<p class=\"%s\">%d</p>" %(colclass,matchpercent)
         

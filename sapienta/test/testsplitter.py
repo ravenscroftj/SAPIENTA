@@ -4,6 +4,7 @@ Simple test for the accuracy of the sentence splitter mechanism in SAPIENTA
 import sys
 import os
 import tempfile
+import cPickle
 
 from xml.dom import minidom
 
@@ -27,7 +28,7 @@ def extractText( node ):
 
     return text.strip()
 
-def getSplitSentences( paperid ):
+def getSplitSentences( paperid, classifier ):
     """Run the new splitter system over the paper, returning sentences"""
 
     outfile = os.path.join(TEST_FILES_PATH, "newSplitter", paperid + "_split.xml")
@@ -35,25 +36,15 @@ def getSplitSentences( paperid ):
     print outfile
     
     s = SSSplit()
+    s.classifier = classifier
 
     infile = os.path.join(TEST_FILES_PATH, "noSents", paperid + ".xml")
 
     s.split(infile, outfile)
 
-    sentences = []
-    
-    #for sent in s.indoc.getElementsByTagName("s"):
-
     doc = minidom.parse(outfile)
 
-    for sent in doc.getElementsByTagName("s"):
-
-        sid = sent.getAttribute("sid")
-
-        words = extractText(sent).split(" ")
-        sentences.append({"sid" : sid, "first" : words[0], "last" : words[len(words)-1]})
-
-    return sentences
+    return sentencesFromNodes(doc.getElementsByTagName("s"), "sid")
 
 def getSSSplitResult( paperid ):
 
@@ -62,13 +53,21 @@ def getSSSplitResult( paperid ):
     with open(paperName, 'rb') as f:
         doc = minidom.parse(f)
 
+    return sentencesFromNodes(doc.getElementsByTagName("s"), "sid")
+
+def sentencesFromNodes(nodeList, idAttribute):
+    
     sentences = []
-    for node in  doc.getElementsByTagName("s"):
-        words = extractText(node).split(" ")
-        sentences.append({"sid" : node.getAttribute("sid"), "first": words[0], "last": words[len(words)-1] })
-
-    return sentences
-
+    words = []
+    
+    for sent in nodeList:
+        sid = sent.getAttribute(idAttribute)
+        sentWords = [ w.strip() for w in extractText(sent).strip().split(" ") if w.strip() != '' ]
+        firstWord = len(words)
+        words.extend(sentWords)
+        sentences.append( { "sid":sid, "first" : firstWord, "last" : firstWord + len(sentWords) - 1  } )
+        
+    return sentences, words
 
 def getManualSentences( paperid ):
 
@@ -79,16 +78,7 @@ def getManualSentences( paperid ):
 
     nodes = doc.getElementsByTagName("A-S") + doc.getElementsByTagName("S")
 
-    sentences = []
-    #find all sentences and store boundary info
-    for sent in nodes:
-        
-        sid = sent.getAttribute("ID")
-
-        words = extractText(sent).split(" ")
-        sentences.append( { "sid":sid, "first" : words[0], "last" : words[len(words)-1]} )
-    
-    return sentences
+    return sentencesFromNodes(nodes, "ID")
 
 def compareSents(sentList1, sentList2):
     maxSents = max(len(sentList1),len(sentList2))
@@ -114,6 +104,11 @@ def main():
     totalSentsMatchedManual = 0
     totalSents = 0
     papers = 0
+    
+    CLASSIFIER_FILE  = "/home/james/tmp/classifier.pickle"
+        
+    with open(CLASSIFIER_FILE) as f:
+        classifier = cPickle.load(f)
 
     unsplit = os.path.join(TEST_FILES_PATH, "noSents")
     for root, dirs, files in os.walk(unsplit):
@@ -133,26 +128,26 @@ def main():
                 matchesManual  = True
                 matchesSSSplit = True
 
-                msents = getManualSentences(paperid)
-                asents = getSplitSentences(paperid)
-                sssents = getSSSplitResult( paperid )
+                msents,mwords = getManualSentences(paperid)
+                asents,awords = getSplitSentences(paperid, classifier)
+                sssents,sswords = getSSSplitResult( paperid )
 
                 print "Found %d manual sentences" % len(msents)
                 print "Found %d automatic sentences" % len(asents)
                 print "Found %d SSSplit sentences" % len(sssents)
-
-               # for s in range(0, len(asents)):
-               #     assert asents[s] == sssents[s]
 
                 print "SSplit matches new splitter"
 
                 for s in range(0, min(len(msents),len(asents), len(sssents))): 
                     print "Sentence %s" % s
                     print "--------------------"
-                    print "Manual: \t" , msents[s]
-                    print "Splitter: \t",asents[s]
-                    print "SSPlit:   \t", sssents[s]
+                    print "Manual: \t" , " ".join(mwords[msents[s]['first']:msents[s]['last']+1])
+                    print "Splitter: \t"," ".join(awords[asents[s]['first']:asents[s]['last']+1])
+                    #print "SSPlit:   \t", sssents[s]
                     print "--------------------"
+                    
+                    print "asent_start %i, msent_start: %i" % ( asents[s]['first'], msents[s]['first'] )
+                    print "msent_last %i, msent_last: %i" % ( asents[s]['last'], msents[s]['last'])
                     
                     try:
                         assert msents[s]['first'] == asents[s]['first']

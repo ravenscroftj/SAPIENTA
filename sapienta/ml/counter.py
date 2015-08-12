@@ -62,7 +62,7 @@ class Counter(dict):
     # Override dict methods where the meaning changes for Counter objects.
 
     @classmethod
-    def fromkeys(cls, iterable, v=None):
+    def fromkeys(isEnd, iterable, v=None):
         raise NotImplementedError(
             'Counter.fromkeys() is undefined.  Use Counter(iterable) instead.')
 
