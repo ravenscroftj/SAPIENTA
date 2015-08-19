@@ -8,7 +8,7 @@ highLevelContainerElements = ["DIV", "sec"]
 pLevelContainerElements = ["P", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
 referenceElements = ["REF"]
-commonAbbreviations = ['Fig','Figs', 'Ltd', 'St', 'al', 'ca', 'vs', 'viz', 'prot', 'Co', 'Ltd', 'No']
+commonAbbreviations = ['Fig','Figs', 'Ltd', 'St', 'al', 'ca', 'vs', 'viz', 'prot', 'Co', 'Ltd', 'No', 'Chem']
 
 from sapienta.tools.mlsplit import text_to_features
 
@@ -216,8 +216,17 @@ class SSSplit:
                 endOfSent = False
                 
             #if the last word is a single letter then it is usually an initial
-            if lastword != None and len(lastword) == 1 and lastword.isupper():
-                endOfSent = False
+            
+            if lastword != None and re.match("^[\(\[]?[A-Z]$", lastword): 
+                
+                sent = txt[last:m.end()]
+                
+                #find the last letter in the word before the last word
+                j = sent.rfind(lastword) - 2 
+                interesting = sent[j:j+1]
+                
+                if interesting not in "0123456789":
+                    endOfSent = False
             
             if txt[last:m.end()].strip() != '':
                 self.newSentence.append(txt[last:m.end()])

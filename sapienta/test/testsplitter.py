@@ -125,6 +125,7 @@ def main():
                 print "--------------------------------------------"
                 print "In paper: %s" % paperid
                 
+                offset = 0
                 matchesManual  = True
                 matchesSSSplit = True
 
@@ -155,6 +156,8 @@ def main():
                         totalSentsMatchedManual += 1
                     except:
                         matchesManual = False
+                        offset += msents[s]['last'] - asents[s]['last']
+                        print offset
                         
                                             
                     try:
