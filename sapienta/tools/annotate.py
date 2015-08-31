@@ -40,7 +40,7 @@ class BaseAnnotator(object):
         c = Counter()
 
         for s in self.doc.getElementsByTagName("s"):
-            if s.parentNode.localName == "article-title": continue 
+            if s.parentNode == None or s.parentNode.localName == "article-title": continue 
 
             sid = s.getAttribute("sid")
 

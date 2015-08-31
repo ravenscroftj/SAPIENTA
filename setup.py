@@ -15,6 +15,7 @@ setup(
 
     entry_points = {"console_scripts" : [
         'pdfxconv = sapienta.tools.pdfxconv:main',
+        'sapientacli = sapienta.processing.cli:main',
         'sapientmaster = sapienta.processing:main',
         'sapientworker = sapienta.processing.worker:main',
         'sapientaweb   = sapienta:main'

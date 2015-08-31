@@ -250,7 +250,7 @@ class SciXML:
             header = Header()
             self.doc.addHeader(header)
             self.currHeader = header
-        elif name == 'P':
+        elif name.lower() == 'p':
             self.inParagraph = True
             para = Paragraph()
             self.currHeader.addParagraph(para)

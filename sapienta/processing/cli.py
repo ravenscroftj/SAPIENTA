@@ -143,19 +143,19 @@ def main():
             
         elif( ext == ".xml"):
             logging.info("No conversion needed on %s" , infile)
-            inqueue    = "sapienta.sssplit.incoming"
+            inqueue    = "sapienta.service.splitq"
         else:
             logging.info("Unrecognised format for file %s", infile)
             sys.exit(0)
 
         if(options.split):
             logging.info("Splitting sentences in %s", infile)
-            exit_after = "sapienta.sssplit.incoming"
+            exit_after = "sapienta.service.splitq"
             
         if(options.annotate):
             #build annotated filename
             logging.info("Annotating file and saving to %s", outfile)
-            exit_after = "sapienta.sssplit.annotate"
+            exit_after = "sapienta.service.annotateq"
 
         #do the queue
         client.queue_job(inqueue, infile, exit_after)
