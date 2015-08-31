@@ -38,7 +38,7 @@ def main():
             help="Provide more debug output and reload server on changes")
 
     parser.add_option("-p", "--port", dest="port", default="5000",
-        help="Set the port that partridge will server web pages on")
+        help="Set the port that sapienta will server web pages on")
 
     opts,args = parser.parse_args(sys.argv)
 

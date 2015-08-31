@@ -28,8 +28,6 @@ from sapienta import app
 config = app.config
 
 
-def test(*args):
-   print args
 
 #-------------------------------------------------------------------------------
 
@@ -162,20 +160,6 @@ class PaperWorker:
         a.annotate( infile, outfile )
 
         return outfile
-
-    def convertPDF(self, infile):
-        """Small routine for starting the PDF conversion call
-        """
-
-        self.logger.info("Converting %s to xml", infile)
-
-        p = PDFXConverter()
-
-        outname = os.path.join(self.outdir,self.name + ".xml")
-
-        p.convert(infile, outname)
-
-        return outname
 
     def splitXML(self, infile):
         """Routine for starting XML splitter call"""

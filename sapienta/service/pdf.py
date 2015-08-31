@@ -1,38 +1,33 @@
-"""MQ-based annotate processing system
-"""
-
 import logging
-import pika
-import tempfile
 import os
+import tempfile
 
 from sapienta import app
 
-from sapienta.processing.mq import BaseMQService
-from sapienta.tools.annotate import Annotator
+from sapienta.tools.converter import PDFXConverter
+from sapienta.service.mq import BaseMQService
 
-
-class AnnotateMQService(BaseMQService):
+class PDFConverterService(BaseMQService):
 
     def run(self, properties, body):
 
         headers = properties.headers
-        self.logger.info("Handling paper annotation on {docname}".format(**headers))
+        self.logger.info("Handling PDF conversion on {docname}".format(**headers))
         
         #store file data payload
         fd, fname = tempfile.mkstemp()
         od, outname = tempfile.mkstemp()
 
-        self.logger.debug("Dumping XML data to {}".format(outname))
+        self.logger.debug("Dumping PDF data to {}".format(outname))
 
         with open(fname,'wb') as f:
             f.write(body)
 
-        self.logger.debug("Running annotator on {docname}".format(**headers))
-        anno = Annotator()
-        anno.annotate(fname,outname)
+        self.logger.debug("Running PDF converter on {docname}".format(**headers))
+        pdfx = PDFXConverter()
+        pdfx.convert(fname, outname)
 
-        self.logger.info("Annotation of {}  XML complete.".format(
+        self.logger.info("Conversion of {} from PDF to XML complete.".format(
             headers['docname']
             ))
 
@@ -46,9 +41,10 @@ class AnnotateMQService(BaseMQService):
 
         return properties, payload
 
+if __name__ == "__main__":
+
     config = app.config
 
-if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    a = AnnotateMQService(config, "sapienta.service.annotate")
-    a.connect()
+    pdf = PDFConverterService(config, "sapienta.service.pdfx")
+    pdf.connect()

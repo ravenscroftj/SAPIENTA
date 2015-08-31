@@ -57,12 +57,12 @@ class CoordinatorServerHandler:
     def _dispatch(self, method, params):
         
         if hasattr(self,method):
-             try: 
-                 return getattr(self, method)(*params)
-             except:
-                 import traceback
-                 traceback.print_exc()
-                 raise
+            try: 
+                return getattr(self, method)(*params)
+            except:
+                import traceback
+                traceback.print_exc()
+                raise
 
 #------------------------------------------------------------------------------------------------
 
@@ -181,7 +181,7 @@ class CoordinatorServerHandler:
 
             self.dblock.release()
 
-         #now restore worker slot and get more work
+        #now restore worker slot and get more work
         self.dblock.acquire()
         self.logger.info("Freeing up worker slot for jobid=%s", jobid)
          
