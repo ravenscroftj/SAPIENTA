@@ -5,12 +5,12 @@ import lxml.etree as ET
 
 
 highLevelContainerElements = ["DIV", "sec"]
-pLevelContainerElements = ["P", "region"]
+pLevelContainerElements = ["P", "p", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
-referenceElements = ["REF"]
+referenceElements = ["REF", 'xref']
 commonAbbreviations = ['Fig','Figs', 'Ltd', 'St', 'al', 'ca', 'vs', 'viz', 'prot', 'Co', 'Ltd', 'No', 'Chem']
 
-from sapienta.tools.mlsplit import text_to_features
+#from sapienta.tools.mlsplit import text_to_features
 
 def is_str(s):
     return isinstance(s,str) or isinstance(s,unicode)
@@ -43,10 +43,13 @@ class SSSplit:
         #load list of referenced authors for sentence splitting purposes
         self.load_authors()
 
-        #first find and split abstract(s) (special case p-level container)
-        for container in abstractLevelContainerElements:
-            for el in self.root.findall(container):
-                self.split_plevel_container(el)
+        #first find and split ABSTRACT (SciXML special case p-level container)
+        for el in self.root.iter("ABSTRACT"):
+            self.split_plevel_container(el)
+            
+        #find and split abstract (Pubmed DTD special case high level container)
+        for el in self.root.iter("abstract"):
+            self.split_high_level_container(el)
 
         #now we handle remaining high level containers such as <DIV> or <sec>
         for container in highLevelContainerElements:
@@ -338,5 +341,5 @@ class SSSplit:
 
 if __name__ == "__main__":
     splitter = SSSplit()
-    print splitter.split("b103844n_nosents.xml")
+    print splitter.split("/home/james/tmp/papers_for_type/research/journal.pbio.0040372.xml")
     
