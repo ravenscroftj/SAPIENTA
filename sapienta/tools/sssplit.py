@@ -187,8 +187,8 @@ class SSSplit:
         # first, if the text starts with a capital letter and
         # current sentence is not empty -we got it wrong - 
         # end current sentence now.
-        if(re.match("^[\(\[]?[A-Z]", txt) and len(self.newSentence) > 0):
-            self.endCurrentSentence()
+        #if(re.match("^[\(\[]?[A-Z]", txt) and len(self.newSentence) > 0):
+        #    self.endCurrentSentence()
         
         pattern = re.compile('(\.|\?|\!)(?=\s*[\[\(A-Z0-9$])|\.$')
 
