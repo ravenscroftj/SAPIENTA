@@ -18,7 +18,9 @@ class BaseMQService:
         """Connect the MQ client to the broker"""
 
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(
-                    host=self.config['SAPIENTA_MQ_HOST']))
+                    host=self.config['SAPIENTA_MQ_HOST'],
+                    connection_attempts=10,
+                    retry_delay=5))
 
         self.channel = self.connection.channel()
 
@@ -71,6 +73,8 @@ class BaseMQService:
 
         if (self.output_topic == None) | (exit_after == self.input_topic):
 
+            self.logger.info("Processing complete. Exiting the pipeline")
+
             #send completed operation back to client
             ch.basic_publish(exchange='',
                 routing_key=properties.reply_to,
@@ -79,6 +83,9 @@ class BaseMQService:
                     correlation_id=properties.correlation_id),
                 body = payload)
         else:
+            
+            self.logger.info("Passing the message along to %s ", self.output_topic)
+
             ch.basic_publish(exchange=self.config['SAPIENTA_MQ_EXCHANGE'],
                     routing_key=self.output_topic,
                    properties = pika.BasicProperties(

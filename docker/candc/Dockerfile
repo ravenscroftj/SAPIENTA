@@ -8,8 +8,8 @@ ADD candc-1.00/ /candc
 ADD candc.patch /candc/candc.patch
 ADD run_server.sh /candc/bin/run_server.sh
 
-#Authorise some of the packages needed by install
-RUN pacman-key --lsign-key 753E0F1F && pacman-key -r 753E0F1F
+#make sure pacman keys are up to date
+RUN pacman-key --refresh-keys
 
 RUN pacman -Sy --noconfirm libstdc++5 base-devel libunistring wget
 

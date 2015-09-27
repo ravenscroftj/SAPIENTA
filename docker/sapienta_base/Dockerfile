@@ -5,7 +5,7 @@ MAINTAINER James Ravenscroft <ravenscroft@papro.org.uk>
 #add sapienta source
 ADD ./sapienta /build/sapienta
 ADD ./setup.py /build/
-ADD ./sapienta.cfg ~/.config/sapienta.cfg
+ADD ./sapienta.cfg /sapienta.cfg
 
 ##add sapienta models
 ADD ./all_papers.model /models/all_papers.model

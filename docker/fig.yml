@@ -1,18 +1,33 @@
-sapienta:
-    build: ./sapienta
-    command: python2 /build/sapienta/processing/base.py
-    links:
-        - candc
-        - mq
-        - sssplit
+#sapienta:
+#    build: ./sapienta
+#    command: python2 /build/sapienta/processing/base.py
+#    links:
+#        - candc
+#        - mq
+#        - sssplit
 
 sssplit:
     build: ./sssplit
     links:
         - mq
-    
+
+pdfx:
+    build: ./pdfx
+    links:
+        - mq
+
+annotator:
+    build: ./annotator
+    links:
+        - candc
+        - mq
 
 candc:
     build: ./candc
+
+
 mq:
-    image: dockerfile/rabbitmq
+    image: rabbitmq:3-management
+    ports:
+        - "5672:5672"
+        - "15672:15672"

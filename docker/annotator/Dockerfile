@@ -8,4 +8,4 @@ RUN pacman -Syu --noconfirm python2-lxml
 ENV PARTRIDGE_CONF /sapienta.cfg
 
 #run server
-ENTRYPOINT cd /build/ && python2 sapienta/service/split.py
+ENTRYPOINT cd /build/ && python2 sapienta/service/annotate.py
