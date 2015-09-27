@@ -30,5 +30,7 @@ RUN tar xf crfsuite-0.12.tar.gz
 
 RUN cd ./crfsuite-0.12 && ./configure --prefix=/usr && make && make install
 
+RUN cd /crfsuite-0.12/swig/python && cp ../crfsuite.cpp . && python2 setup.py install
+
 #install sapienta client
 RUN cd /build/ && python2 setup.py develop
