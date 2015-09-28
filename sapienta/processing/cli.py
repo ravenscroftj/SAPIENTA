@@ -60,7 +60,10 @@ class MQCLIClient:
     def on_response(self, ch, method, properties, body):
 
         if properties.correlation_id in self.jobs:
-            self.on_job_complete(properties,body)
+            if "error" in properties.headers:
+                self.on_job_failed(properties, body)
+            else:
+                self.on_job_complete(properties,body)
 
     
     def wait_for_jobs(self):
@@ -70,6 +73,14 @@ class MQCLIClient:
 
         self.logger.info("All CLI work done, shutting down...")
         self.connection.close()
+        
+    def on_job_failed(self, properties, body):
+        headers = properties.headers
+        self.logger.error("Work failed for " + headers['docname'])
+        
+        self.logger.error(body)
+        
+        del self.jobs[properties.correlation_id]
 
 
     def on_job_complete(self, properties, body):

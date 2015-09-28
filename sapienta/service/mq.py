@@ -4,6 +4,7 @@ RabbitMQ (AMQP) client work distribution system
 
 import pika
 import logging
+from __main__ import traceback
 
 
 class BaseMQService:
@@ -61,8 +62,27 @@ class BaseMQService:
         self.logger.info("Received message ")
 
         #do a thing
-        properties, payload = self.run(properties, body)
-
+        try:
+            properties, payload = self.run(properties, body)
+        except Exception as exc:
+            self.logger.error("Failed to process payload")
+            tb = traceback.format_exc()
+            self.logger.error(tb)
+            
+            properties.headers['error'] = True
+            
+            ch.basic_ack(delivery_tag = method.delivery_tag)
+            
+            #send the failure back to the user
+            ch.basic_publish(exchange='',
+                routing_key=properties.reply_to,
+                properties = pika.BasicProperties(
+                    headers = properties.headers,
+                    correlation_id=properties.correlation_id),
+                body = tb)
+            
+            return
+        
         #do an ack
         ch.basic_ack(delivery_tag = method.delivery_tag)
 

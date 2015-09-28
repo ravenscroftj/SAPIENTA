@@ -24,6 +24,8 @@ annotator:
 
 candc:
     build: ./candc
+    ports:
+        - "9004:9004"
 
 
 mq:
