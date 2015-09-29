@@ -46,5 +46,5 @@ if __name__ == "__main__":
     config = app.config
 
     logging.basicConfig(level=logging.INFO)
-    pdf = PDFConverterService(config, "sapienta.service.pdfx", "saplienta.service.splitq")
+    pdf = PDFConverterService(config, "sapienta.service.pdfx", "sapienta.service.splitq")
     pdf.connect()
