@@ -4,7 +4,7 @@ import re
 import lxml.etree as ET
 
 
-highLevelContainerElements = ["DIV", "sec"]
+highLevelContainerElements = ["DIV", "sec", "section"]
 pLevelContainerElements = ["P", "p", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
 referenceElements = ["REF", 'xref']
@@ -72,6 +72,10 @@ class SSSplit:
         
         Examples of high level containers are <DIV> in SciXML and <section> 
         in DoCo XML"""
+
+        if containerEl.text != None:
+            self.split_plevel_container(containerEl)
+            return
 
         for containerType in pLevelContainerElements:
             for el in set(containerEl.findall(containerType)):
