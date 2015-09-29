@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="ccg_binding"
+ targetNamespace="urn:candc-ccg"
+ xmlns:tns="urn:candc-ccg"
+ xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+ xmlns:ns1="urn:candc-ccg"
+ xmlns:SOAP="http://schemas.xmlsoap.org/wsdl/soap/"
+ xmlns:MIME="http://schemas.xmlsoap.org/wsdl/mime/"
+ xmlns:DIME="http://schemas.xmlsoap.org/ws/2002/04/dime/wsdl/"
+ xmlns:WSDL="http://schemas.xmlsoap.org/wsdl/"
+ xmlns="http://schemas.xmlsoap.org/wsdl/">
+
+<types>
+
+ <schema targetNamespace="urn:candc-ccg"
+  xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+  xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:ns1="urn:candc-ccg"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="unqualified"
+  attributeFormDefault="unqualified">
+  <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+  <!-- operation request element -->
+  <element name="parse_string">
+   <complexType>
+    <sequence>
+     <element name="text" type="xsd:string" minOccurs="1" maxOccurs="1"/><!-- ns1__parse_USCOREstring::_text -->
+     <element name="start" type="xsd:boolean" minOccurs="1" maxOccurs="1"/><!-- ns1__parse_USCOREstring::_start -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="parse_stringResponse">
+   <complexType>
+    <sequence>
+     <element name="result" type="xsd:string" minOccurs="1" maxOccurs="1"/><!-- ns1__parse_USCOREstring::_result -->
+    </sequence>
+   </complexType>
+  </element>
+ </schema>
+
+</types>
+
+<message name="parse_stringRequest">
+ <part name="parameters" element="ns1:parse_string"/><!-- ns1__parse_USCOREstring::ns1__parse_USCOREstring -->
+</message>
+
+<message name="parse_stringResponse">
+ <part name="parameters" element="ns1:parse_stringResponse"/>
+</message>
+
+<portType name="ccg.port_type">
+ <operation name="parse_string">
+  <documentation>Service definition of function ns1__parse_USCOREstring</documentation>
+  <input message="tns:parse_stringRequest"/>
+  <output message="tns:parse_stringResponse"/>
+ </operation>
+</portType>
+
+<binding name="ccg_binding" type="tns:ccg.port_type">
+ <SOAP:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+ <operation name="parse_string">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+</binding>
+
+<service name="ccg_binding">
+ <documentation>gSOAP 2.8.7 generated service definition</documentation>
+ <port name="ccg_binding" binding="tns:ccg_binding">
+  <SOAP:address location="http://candc:9004"/>
+ </port>
+</service>
+
+</definitions>
