@@ -245,7 +245,7 @@ class SciXML:
             para = Paragraph()
             self.currHeader.addParagraph(para)
             self.currParagraph = para
-        elif (name == 'HEADER') or (name == 'title'):
+        elif (name == 'HEADER') or (name == 'title') or (name == 'article-title'):
             self.inHeader = True
             header = Header()
             self.doc.addHeader(header)
