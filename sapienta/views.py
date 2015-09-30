@@ -96,8 +96,10 @@ def get_paper(jobid):
     with open(outfile, "rb") as f:
 
         r  = Response()
+        r.headers['Content-Disposition'] = "attachment; filename=" + jobid+".xml"
         r.mimetype=mimetypes.guess_type(outfile)[0]
-        return f.read()
+        r.set_data(f.read())
+        return r
 
 
 @app.route("/job/<string:jobid>/<string:q>")
