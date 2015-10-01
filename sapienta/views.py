@@ -5,7 +5,7 @@ import mimetypes
 import zlib
 import pika
 
-from flask import render_template,request, redirect, url_for, Response
+from flask import render_template,request, redirect, url_for, Response, make_response
 
 from sapienta import app
 
@@ -100,6 +100,33 @@ def get_paper(jobid):
         r.mimetype=mimetypes.guess_type(outfile)[0]
         r.set_data(f.read())
         return r
+
+@app.route("/job/<string:jobid>/view")
+def view_paper_stylesheet(jobid):
+    import libxml2
+    import libxslt
+
+
+    outfile = os.path.join(app.config['OUTPUT_DIRECTORY'],
+        "done", jobid+"_done.xml")
+    
+    stylefile = os.path.join(app.config['OUTPUT_DIRECTORY'],
+        "done", jobid+"_pretty.html")
+
+    styledoc = libxml2.parseFile("mode2.xsl")
+    style = libxslt.parseStylesheetDoc(styledoc)
+    doc = libxml2.parseFile(outfile)
+    result = style.applyStylesheet(doc, None)
+    style.saveResultToFilename(stylefile, result, 0)
+    style.freeStylesheet()
+    doc.freeDoc()
+    result.freeDoc()
+    
+    with open(stylefile,'rb') as f:
+        r = Response()
+        r.set_data(f.read())
+        return r
+    
 
 
 @app.route("/job/<string:jobid>/<string:q>")
