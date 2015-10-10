@@ -40,9 +40,9 @@ You will also need to download:
  * [pos_bio](http://www.cl.cam.ac.uk/research/nl/nl-download/candc/pos_bio-1.00.tbz2) (Models for biomedical parsing (for description see Biomedical
    Parsing) 
  * super_coresc (this is not provided by CandC tools, you can find it
-   [here](http://doku.jamesravenscroft.net/~james/sapienta_files/super_coresc.tar.lzma) )
+   [here](https://bitbucket.org/partridge/sapienta/downloads/super_coresc.tar.7z) )
  * CandC Markedup File (again this is privately hosted
-   [here](http://doku.jamesravenscroft.net/~james/sapienta_files/markedup_new)
+   [here](https://bitbucket.org/partridge/sapienta/downloads/markedup_new)
    )
 
 The toolkit requires gSOAP2 in order to build the SOAP server which is used by
