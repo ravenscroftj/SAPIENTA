@@ -131,7 +131,11 @@ Extract the archive and run:
 
 Next, you'll need to download the CRFSuite source archive from
 [here](https://github.com/chokkan/crfsuite/archive/master.zip) and extract it
-to a convenient directory. Next, enter the directory and run the following
+to a convenient directory. 
+
+The configure.in file provided doesn't work so copy the one from the SAPIENTA source directory over the top of it (opt/crfsuite/configure.in)
+
+Next, enter the directory and run the following
 commands:
 
     $ ./autogen.sh
