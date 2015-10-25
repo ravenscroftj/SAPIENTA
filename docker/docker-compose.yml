@@ -23,9 +23,9 @@ annotator:
         - mq
 
 candc:
-    build: ./candc
-    ports:
-        - "9004:9004"
+    image: docker.nopro.be/sapienta/candc
+    #ports:
+    #    - "9004:9004"
 
 
 mq:
@@ -33,3 +33,10 @@ mq:
     ports:
         - "5672:5672"
         - "15672:15672"
+
+web:
+    build: ./web
+    ports:
+        - "80:5000"
+    links: 
+        - mq
