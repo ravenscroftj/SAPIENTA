@@ -8,9 +8,9 @@ ADD ./setup.py /build/
 ADD ./sapienta.cfg /sapienta.cfg
 
 ##add sapienta models
-ADD ./all_papers.model /models/all_papers.model
-ADD ./ngrams.pickle    /models/ngrams.pickle
-ADD ./written.num.o5   /models/written.num.o5
+ADD https://www.dropbox.com/s/ghasw5691jxi9zl/all_papers.model?dl=1 /models/all_papers.model
+ADD https://www.dropbox.com/s/powx8lpjwkjlm3e/ngrams.pickle?dl=1    /models/ngrams.pickle
+ADD https://www.dropbox.com/s/6u5yd6nh0j45yfg/written.num.o5?dl=1   /models/written.num.o5
 
 #make sure pacman keys are up to date
 RUN pacman-key --refresh-keys
