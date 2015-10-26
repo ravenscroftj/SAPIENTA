@@ -4,7 +4,7 @@ RabbitMQ (AMQP) client work distribution system
 
 import pika
 import logging
-from __main__ import traceback
+import traceback
 
 
 class BaseMQService:
