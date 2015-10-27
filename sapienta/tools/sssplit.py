@@ -4,7 +4,7 @@ import re
 import lxml.etree as ET
 
 
-highLevelContainerElements = ["DIV", "sec"]
+highLevelContainerElements = ["DIV", "sec", "section"]
 pLevelContainerElements = ["P", "p", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
 referenceElements = ["REF", 'xref']
@@ -49,6 +49,7 @@ class SSSplit:
             
         #find and split abstract (Pubmed DTD special case high level container)
         for el in self.root.iter("abstract"):
+            print "hello"
             self.split_high_level_container(el)
 
         #now we handle remaining high level containers such as <DIV> or <sec>
@@ -76,6 +77,8 @@ class SSSplit:
         for containerType in pLevelContainerElements:
             for el in set(containerEl.findall(containerType)):
                 self.split_plevel_container(el)
+
+        self.split_plevel_container(containerEl)
         
 
     def split_plevel_container(self, containerEl):
