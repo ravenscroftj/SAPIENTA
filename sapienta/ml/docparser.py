@@ -236,7 +236,7 @@ class SciXML:
         self.currHeader = self.currParagraph = self.currSentence = None
         
     def startElement(self, name, attrs):
-        if (name == 'ABSTRACT') or (name == 'abstract'):
+        if (name == 'ABSTRACT') or (name == 'abstract') or (name == 'AbstractText'):
             header = Header()
             header.name = 'Abstract'
             self.doc.addHeader(header)

@@ -10,7 +10,7 @@ import logging
 from optparse import OptionParser
 from sapienta.tools.converter import PDFXConverter
 from sapienta.tools.annotate import Annotator
-from sapienta.tools.split import SentenceSplitter
+
 
 
 def main():
@@ -20,6 +20,9 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option("-s", "--split-sent", action="store_true", dest="split",
         help="If true, split sentences using NLTK sentence splitter")
+
+    parser.add_option("--splitter", dest="splitter", default="sssplit", 
+            help="Choose which sentence splitter to use [sssplit,textsentence]")
     parser.add_option("-a", "--annotate", action="store_true", dest="annotate",
         help="If true, annotate the sentence-split XML with CoreSC labels")
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
@@ -72,8 +75,13 @@ def main():
 
         if(options.split):
             logging.info("Splitting sentences in %s", infile)
+
+            if options.splitter == "sssplit":
+                from sapienta.tools.sssplit import SSSplit as Splitter
+            else:
+                from sapienta.tools.split import SentenceSplitter as Splitter
             
-            s = SentenceSplitter()
+            s = Splitter()
             outfile = name + "_split.xml"
             
             eb = options.extra_blacklist.split(",")

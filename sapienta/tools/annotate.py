@@ -270,5 +270,8 @@ else:
 
 if __name__ == "__main__":
     r = Annotator()
-    r.annotate("test.xml", "test_output.xml")
+
+    for file in sys.argv[1:]:
+        root,ext = os.path.splitext(file)
+        r.annotate(file, root+".annotated.xml")
 
