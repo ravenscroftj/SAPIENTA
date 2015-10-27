@@ -36,7 +36,7 @@ class SSSplit:
             self.authors.append(" ".join(list(el.itertext())))
 
 
-    def split(self, filename, outname=None):
+    def split(self, filename, outname=None, *args, **kwargs):
         tree = ET.parse(filename)
         self.root = tree.getroot()
 
