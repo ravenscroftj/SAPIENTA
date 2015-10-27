@@ -4,10 +4,13 @@ import sys
 import logging
 from flask import Flask
 
+from sapienta.mqclient import MQClient
+
+from flask.ext.socketio import SocketIO
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 
-import sapienta.views
 
 #try and load configuration
 if( os.getenv("PARTRIDGE_CONF")):
@@ -24,6 +27,10 @@ else:
               except IOError:
                 pass
 
+
+mqclient = MQClient(socketio, app)
+
+import sapienta.views
 
 def main():
     """Main sapienta web server entrypoint
@@ -49,9 +56,10 @@ def main():
         logLevel = logging.DEBUG
 
     logging.basicConfig(level=logLevel, format="%(asctime)s - %(levelname)s - %(name)s:%(message)s")
-
-    app.run(host="0.0.0.0", port=int(opts.port))
-
+    
+    mqclient.connect()
+    socketio.run(app, host="0.0.0.0", port=int(opts.port))
+    mqclient.disconnect()
 
 #----------------------------------------------------------------
 if __name__ == "__main__":

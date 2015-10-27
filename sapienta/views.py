@@ -3,21 +3,26 @@ import os
 import uuid
 import mimetypes
 import zlib
+import pika
 
 from flask import render_template,request, redirect, url_for, Response
-
-from sapienta import app
+from sapienta import app,socketio,mqclient
+from flask.ext.socketio import emit
+from sapienta.service.mq import BaseMQService
 
 ALLOWED_EXTENSIONS = ['.xml','.pdf']
+
+
+@socketio.on('work')
+def submit_job(message):
+    print "Got message: " + message['filename']
+    emit("work", "done")
 
 
 @app.route('/')
 def index():
     return render_template("index.html")
 
-
-def submit():
-    """This view allows users to submit papers for annotation by our servers."""
 
 @app.route("/upload", methods=['GET'])
 def upload_form():
