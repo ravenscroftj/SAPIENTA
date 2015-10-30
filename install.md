@@ -163,11 +163,11 @@ question.
 It is recommended that a virtualenv is set up in the top level of the project directory.
 An example installation procedure with virtualenv is as follows:
     
-    ~ $ git clone git@github.com:ravenscroftj/SAPIENTA.git
-    ~ $ cd SAPIENTA
-    ~/SAPIENTA $ virtualenv env
-    ~/SAPIENTA $ source env/bin/activate
-    (env) ~/SAPIENTA $ python setup.py install
+    ~ $ git clone git@bitbucket.org:partridge/sapienta.git
+    ~ $ cd sapienta
+    ~/sapienta $ virtualenv env
+    ~/sapienta $ source env/bin/activate
+    (env) ~/sapienta $ python setup.py install
     
 Remember that you will need to run the `source env/bin/activate` command each
 time you wish to interact with an instance of SAPIENTA installed inside a
