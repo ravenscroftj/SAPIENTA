@@ -169,7 +169,7 @@ An example installation procedure with virtualenv is as follows:
     ~ $ cd sapienta
     ~/sapienta $ virtualenv env
     ~/sapienta $ source env/bin/activate
-    (env) ~/sapienta $ python setup.py install
+    (env) ~/sapienta $ python setup.py develop
     
 Remember that you will need to run the `source env/bin/activate` command each
 time you wish to interact with an instance of SAPIENTA installed inside a
