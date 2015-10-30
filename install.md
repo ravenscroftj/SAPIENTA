@@ -105,6 +105,8 @@ Extract all models to the same place, extracting markedup_new last and placing i
 the main models archive (models-1.0-2.tbsz2) will extract to the correct directory but the `pos_bio` and `super_coresc`
 archives will need to be extracted and moved into this location.
 
+### Running C and C Server
+
 Now, copy the file sapienta/opt/candc/run_server.sh to the candc-1.00/bin
 directory, and execute it directly ./run_server.sh. If everything has been
 properly configured, you should see `waiting for connections on
