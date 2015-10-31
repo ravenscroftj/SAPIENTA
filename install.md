@@ -105,6 +105,8 @@ Extract all models to the same place, extracting markedup_new last and placing i
 the main models archive (models-1.0-2.tbsz2) will extract to the correct directory but the `pos_bio` and `super_coresc`
 archives will need to be extracted and moved into this location.
 
+### Running C and C Server
+
 Now, copy the file sapienta/opt/candc/run_server.sh to the candc-1.00/bin
 directory, and execute it directly ./run_server.sh. If everything has been
 properly configured, you should see `waiting for connections on
@@ -163,11 +165,11 @@ question.
 It is recommended that a virtualenv is set up in the top level of the project directory.
 An example installation procedure with virtualenv is as follows:
     
-    ~ $ git clone git@github.com:ravenscroftj/SAPIENTA.git
-    ~ $ cd SAPIENTA
-    ~/SAPIENTA $ virtualenv env
-    ~/SAPIENTA $ source env/bin/activate
-    (env) ~/SAPIENTA $ python setup.py install
+    ~ $ git clone git@bitbucket.org:partridge/sapienta.git
+    ~ $ cd sapienta
+    ~/sapienta $ virtualenv env
+    ~/sapienta $ source env/bin/activate
+    (env) ~/sapienta $ python setup.py develop
     
 Remember that you will need to run the `source env/bin/activate` command each
 time you wish to interact with an instance of SAPIENTA installed inside a
