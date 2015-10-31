@@ -2,16 +2,19 @@
 import progressbar
 import argparse
 import logging
+import os
 
 from base64 import b64encode
 
 from socketIO_client import SocketIO, LoggingNamespace, BaseNamespace
 
-class SapientaNamespace(BaseNamespace):
+ongoing = []
 
-    def on_work_response(self, *args):
-        print "Response"
+def on_jobid_response(jobid):
+    print "Received jobid: " + jobid
 
+def on_finished_response(jobid):
+    print "Job %s is finished " % jobid
 
 def main():
     
@@ -54,9 +57,17 @@ def main():
             with open(paper,'rb') as f:
                 data = f.read()
 
-            socketIO.emit("work", {"filename" : paper, 'data' : b64encode(data) })
+            message =  {"filename" : os.path.basename(paper), 'body' : b64encode(data) }
+            
+            message['split'] = options.split
+            message['annotate'] = options.annotate
 
-        socketIO.wait(seconds=1)
+
+            socketIO.on('jobid', on_jobid_response)
+            socketIO.on('finished', on_finished_response)
+            socketIO.emit("work",message)
+
+        socketIO.wait()
 
 
 if __name__ == "__main__":

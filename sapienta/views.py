@@ -4,19 +4,61 @@ import uuid
 import mimetypes
 import zlib
 import pika
+import logging
+
+from base64 import b64decode
 
 from flask import render_template,request, redirect, url_for, Response
 from sapienta import app,socketio,mqclient
-from flask.ext.socketio import emit
+from flask.ext.socketio import emit, join_room, leave_room
 from sapienta.service.mq import BaseMQService
 
 ALLOWED_EXTENSIONS = ['.xml','.pdf']
 
 
+logger = logging.getLogger(__name__)
+
+
 @socketio.on('work')
 def submit_job(message):
-    print "Got message: " + message['filename']
-    emit("work", "done")
+    #print "Got message: " + message['filename']
+
+    inqueue = "sapienta.service.pdfx"
+    exit_after = inqueue
+    filename = message['filename']
+
+    name,ext = os.path.splitext(filename)
+
+    split    = "split" in message and message['split']
+    annotate = "annotate" in message and message['annotate'] 
+            
+    if(ext == ".pdf"):
+
+        logging.info("Converting %s", filename)
+        
+    elif( ext == ".xml"):
+        logging.info("No conversion needed on %s" , filename)
+        inqueue    = "sapienta.service.splitq"
+    else:
+        logging.info("Unrecognised format for file %s", filename)
+        sys.exit(0)
+
+    if(split):
+        logging.info("Splitting sentences in %s", filename)
+        exit_after = "sapienta.service.splitq"
+        
+    if(annotate):
+        #build annotated filename
+        logging.info("Annotating file %s", filename)
+        exit_after = "sapienta.service.annotateq"
+
+    body = b64decode(message['body'])
+
+    jobid = mqclient.submit_job(inqueue, filename, body, exit_after)
+
+    join_room(jobid)
+
+    emit("jobid", jobid)
 
 
 @app.route('/')
