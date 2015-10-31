@@ -3,18 +3,41 @@ import progressbar
 import argparse
 import logging
 import os
+import sys
 
-from base64 import b64encode
+from base64 import b64encode,b64decode
 
 from socketIO_client import SocketIO, LoggingNamespace, BaseNamespace
 
-ongoing = []
+ongoing = 0
 
 def on_jobid_response(jobid):
     print "Received jobid: " + jobid
 
-def on_finished_response(jobid):
-    print "Job %s is finished " % jobid
+
+def on_finished_response(response):
+
+    global ongoing
+
+    print "Job %s is finished " % response['jobid']
+
+    headers = response['headers']
+    body = response['body']
+    name,ext = os.path.splitext(headers['docname'])
+
+
+    print "Saving to %s" % (name+"_annotated.xml")
+
+    with open(name+"_annotated.xml", "wb") as f:
+        f.write(b64decode(body))
+
+    print "All done"
+
+    ongoing -= 1
+
+    if ongoing < 1:
+        print "All jobs have returned. Exiting"
+        sys.exit()
 
 def main():
     

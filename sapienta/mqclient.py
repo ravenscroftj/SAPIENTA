@@ -172,5 +172,7 @@ class MQClient(threading.Thread):
 
         logger.info("Broadcasting event to room %s ", properties.correlation_id)
 
-        self.socketio.emit("finished",properties.correlation_id)
+        self.socketio.emit("finished",{"jobid" : properties.correlation_id, 
+            "headers" : properties.headers,
+            "body" : base64.b64encode(body)})
 
