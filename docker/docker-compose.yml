@@ -37,6 +37,6 @@ mq:
 web:
     build: ./web
     ports:
-        - "80:5000"
+        - "5000:5000"
     links: 
         - mq

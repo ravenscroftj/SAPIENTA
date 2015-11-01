@@ -10,9 +10,9 @@ clean :
 	rm sapienta_base/setup.py
 
 sapienta_base : sapienta_base/Dockerfile
-        cp -r ../sapienta sapienta_base
-        cp ../setup.py sapienta_base/setup.py
-        docker build -t sapienta/base sapienta_base/ 
+	cp -r ../sapienta sapienta_base
+	cp ../setup.py sapienta_base/setup.py
+	docker build -t sapienta/base sapienta_base/ 
 
 
 candc: candc/Dockerfile

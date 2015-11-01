@@ -11,7 +11,7 @@ ADD https://www.dropbox.com/s/6u5yd6nh0j45yfg/written.num.o5?dl=1   /models/writ
 RUN pacman-key --refresh-keys
 
 #install dependencies
-RUN pacman -Syu --noconfirm libstdc++5 git base-devel python2 python2-pip python2-setuptools libunistring
+RUN pacman -Syu --noconfirm libstdc++5 git base-devel python2 python2-pip python2-setuptools libunistring python2-lxml
 
 #check out and build liblbfgs
 RUN git clone https://github.com/chokkan/liblbfgs.git
@@ -26,6 +26,9 @@ RUN tar xf crfsuite-0.12.tar.gz
 RUN cd ./crfsuite-0.12 && ./configure --prefix=/usr && make && make install
 
 RUN cd /crfsuite-0.12/swig/python && cp ../crfsuite.cpp . && python2 setup.py install
+
+#install pika library for rabbitmq
+RUN pip2 install pika Flask-SocketIO gevent gevent-websocket
 
 #add sapienta source
 ADD ./sapienta /build/sapienta
