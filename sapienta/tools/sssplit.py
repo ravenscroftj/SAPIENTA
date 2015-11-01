@@ -4,7 +4,7 @@ import re
 import lxml.etree as ET
 
 
-highLevelContainerElements = ["DIV", "sec", "section", "region"]
+highLevelContainerElements = ["DIV", "sec", "section"]
 pLevelContainerElements = ["P", "p", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
 referenceElements = ["REF", 'xref']
@@ -21,7 +21,6 @@ class SSSplit:
     classifier = None
 
     def normalize_sents(self):
-region
         for i,s in enumerate(self.root.iter("s")):
 
             #set sentence ID
@@ -246,7 +245,7 @@ region
             #if the dot matches the end of a common abbreviation, skip end of sentence
 
             #if we match digits around a dot then its probably a number so skip
-            if re.match("[0-9]\.[0-9]", txt[m.start()-1:m.end()+1]):
+            if re.match("[0-9]?\.[0-9]", txt[m.start()-1:m.end()+1]):
                 endOfSent = False
                 
             #if we match lower case letters it could be an abbreviation like e.g. or i.e.

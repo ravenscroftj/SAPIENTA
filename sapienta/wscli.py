@@ -9,10 +9,12 @@ from base64 import b64encode,b64decode
 
 from socketIO_client import SocketIO, LoggingNamespace, BaseNamespace
 
-ongoing = 0
+ongoing = {}
 
-def on_jobid_response(jobid):
-    print "Received jobid: " + jobid
+def on_jobid_response(response):
+
+    print "Received jobid %(jobid)s for file %(filename)s " % response
+    ongoing[response['jobid']] = response['filename']
 
 
 def on_finished_response(response):
@@ -21,9 +23,12 @@ def on_finished_response(response):
 
     print "Job %s is finished " % response['jobid']
 
+    filename = ongoing[response['jobid']]
+
+
     headers = response['headers']
     body = response['body']
-    name,ext = os.path.splitext(headers['docname'])
+    name,ext = os.path.splitext(filename)
 
 
     print "Saving to %s" % (name+"_annotated.xml")
@@ -33,9 +38,9 @@ def on_finished_response(response):
 
     print "All done"
 
-    ongoing -= 1
+    del ongoing[response['jobid']]
 
-    if ongoing < 1:
+    if len(ongoing) < 1:
         print "All jobs have returned. Exiting"
         sys.exit()
 
@@ -80,7 +85,7 @@ def main():
             with open(paper,'rb') as f:
                 data = f.read()
 
-            message =  {"filename" : os.path.basename(paper), 'body' : b64encode(data) }
+            message =  {"filename" : paper, 'body' : b64encode(data) }
             
             message['split'] = options.split
             message['annotate'] = options.annotate

@@ -54,11 +54,11 @@ def submit_job(message):
 
     body = b64decode(message['body'])
 
-    jobid = mqclient.submit_job(inqueue, filename, body, exit_after)
+    jobid = mqclient.submit_job(inqueue, os.path.basename(filename), body, exit_after)
 
     join_room(jobid)
 
-    emit("jobid", jobid)
+    emit("jobid", {"filename" : filename, "jobid" : jobid })
 
 
 @app.route('/')
