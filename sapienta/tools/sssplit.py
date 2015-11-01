@@ -4,7 +4,7 @@ import re
 import lxml.etree as ET
 
 
-highLevelContainerElements = ["DIV", "sec", "section"]
+highLevelContainerElements = ["DIV", "sec", "section", "region"]
 pLevelContainerElements = ["P", "p", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
 referenceElements = ["REF", 'xref']
@@ -21,7 +21,7 @@ class SSSplit:
     classifier = None
 
     def normalize_sents(self):
-
+region
         for i,s in enumerate(self.root.iter("s")):
 
             #set sentence ID
@@ -49,7 +49,6 @@ class SSSplit:
             
         #find and split abstract (Pubmed DTD special case high level container)
         for el in self.root.iter("abstract"):
-            print "hello"
             self.split_high_level_container(el)
 
         #now we handle remaining high level containers such as <DIV> or <sec>
@@ -74,11 +73,14 @@ class SSSplit:
         Examples of high level containers are <DIV> in SciXML and <section> 
         in DoCo XML"""
 
+        self.no_plevel_splits = True
+
         for containerType in pLevelContainerElements:
             for el in set(containerEl.findall(containerType)):
                 self.split_plevel_container(el)
 
-        self.split_plevel_container(containerEl)
+        if self.no_plevel_splits:
+            self.split_plevel_container(containerEl)
         
 
     def split_plevel_container(self, containerEl):
@@ -96,6 +98,7 @@ class SSSplit:
 
         #if the container element has text insert in front of other siblings
         if containerEl.text != None:
+            self.no_plevel_splits = False
             siblings = [ containerEl.text] + siblings
 
         #self.splitSentencesML(siblings, containerEl)
