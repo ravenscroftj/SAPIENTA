@@ -4,7 +4,7 @@ import re
 import lxml.etree as ET
 
 
-highLevelContainerElements = ["DIV", "sec", "section"]
+highLevelContainerElements = ["DIV", "sec", "section", "body"]
 pLevelContainerElements = ["P", "p", "region"]
 abstractLevelContainerElements = ["abstract", "ABSTRACT"]
 referenceElements = ["REF", 'xref']
@@ -80,6 +80,7 @@ class SSSplit:
 
         if self.no_plevel_splits:
             self.split_plevel_container(containerEl)
+
         
 
     def split_plevel_container(self, containerEl):
