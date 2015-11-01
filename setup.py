@@ -9,7 +9,8 @@ setup(
     install_requires = ['Flask>=0.9',
             'pycurl>=7.19.0',
             'progressbar>=2.3',
-            'text-sentence>=0.14',
+            #'text-sentence>=0.14',
+            'lxml>=3.4.4',
             'pyavl>=1.12',
             'suds>=0.4'],
 

@@ -1,4 +1,4 @@
-from sapienta:base
+from sapienta/base
 
 MAINTAINER James Ravenscroft <ravenscroft@papro.org.uk>
 

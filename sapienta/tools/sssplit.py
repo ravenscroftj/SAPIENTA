@@ -36,7 +36,7 @@ class SSSplit:
             self.authors.append(" ".join(list(el.itertext())))
 
 
-    def split(self, filename, outname=None):
+    def split(self, filename, outname=None, *args, **kwargs):
         tree = ET.parse(filename)
         self.root = tree.getroot()
 
@@ -49,6 +49,7 @@ class SSSplit:
             
         #find and split abstract (Pubmed DTD special case high level container)
         for el in self.root.iter("abstract"):
+            print "hello"
             self.split_high_level_container(el)
 
         #now we handle remaining high level containers such as <DIV> or <sec>
@@ -76,10 +77,8 @@ class SSSplit:
         for containerType in pLevelContainerElements:
             for el in set(containerEl.findall(containerType)):
                 self.split_plevel_container(el)
-                
-        if containerEl.text != None:
-            self.split_plevel_container(containerEl)
-            return
+        
+        self.split_plevel_container(containerEl)
         
 
     def split_plevel_container(self, containerEl):

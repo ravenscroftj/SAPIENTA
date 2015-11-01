@@ -40,9 +40,9 @@ You will also need to download:
  * [pos_bio](http://www.cl.cam.ac.uk/research/nl/nl-download/candc/pos_bio-1.00.tbz2) (Models for biomedical parsing (for description see Biomedical
    Parsing) 
  * super_coresc (this is not provided by CandC tools, you can find it
-   [here](http://doku.jamesravenscroft.net/~james/sapienta_files/super_coresc.tar.lzma) )
+   [here](https://bitbucket.org/partridge/sapienta/downloads/super_coresc.tar.7z) )
  * CandC Markedup File (again this is privately hosted
-   [here](http://doku.jamesravenscroft.net/~james/sapienta_files/markedup_new)
+   [here](https://bitbucket.org/partridge/sapienta/downloads/markedup_new)
    )
 
 The toolkit requires gSOAP2 in order to build the SOAP server which is used by
@@ -105,6 +105,8 @@ Extract all models to the same place, extracting markedup_new last and placing i
 the main models archive (models-1.0-2.tbsz2) will extract to the correct directory but the `pos_bio` and `super_coresc`
 archives will need to be extracted and moved into this location.
 
+### Running C and C Server
+
 Now, copy the file sapienta/opt/candc/run_server.sh to the candc-1.00/bin
 directory, and execute it directly ./run_server.sh. If everything has been
 properly configured, you should see `waiting for connections on
@@ -131,7 +133,11 @@ Extract the archive and run:
 
 Next, you'll need to download the CRFSuite source archive from
 [here](https://github.com/chokkan/crfsuite/archive/master.zip) and extract it
-to a convenient directory. Next, enter the directory and run the following
+to a convenient directory. 
+
+The configure.in file provided doesn't work so copy the one from the SAPIENTA source directory over the top of it (opt/crfsuite/configure.in)
+
+Next, enter the directory and run the following
 commands:
 
     $ ./autogen.sh
@@ -159,11 +165,11 @@ question.
 It is recommended that a virtualenv is set up in the top level of the project directory.
 An example installation procedure with virtualenv is as follows:
     
-    ~ $ git clone git@github.com:ravenscroftj/SAPIENTA.git
-    ~ $ cd SAPIENTA
-    ~/SAPIENTA $ virtualenv env
-    ~/SAPIENTA $ source env/bin/activate
-    (env) ~/SAPIENTA $ python setup.py install
+    ~ $ git clone git@bitbucket.org:partridge/sapienta.git
+    ~ $ cd sapienta
+    ~/sapienta $ virtualenv env
+    ~/sapienta $ source env/bin/activate
+    (env) ~/sapienta $ python setup.py develop
     
 Remember that you will need to run the `source env/bin/activate` command each
 time you wish to interact with an instance of SAPIENTA installed inside a
