@@ -10,8 +10,8 @@ import csv
 
 from multiprocessing import Pool, Lock
 
-from sapienta.ml.svmlight import SVMLightTrainer as Trainer
-#from sapienta.ml.train import CRFTrainer as Trainer
+#from sapienta.ml.svmlight import SVMLightTrainer as Trainer
+from sapienta.ml.train import CRFTrainer as Trainer
 
 try:
     from collections import Counter
@@ -104,7 +104,7 @@ class CrossValidationTrainer:
         fixtures = []
 
         #TEMPORARY THING THAT STOPS LOOKING AFTER 3 FOLDS
-        self.folds = self.folds[:1]
+        #self.folds = self.folds[:1]
 
         for f, fold in enumerate(self.folds):
 
@@ -274,7 +274,7 @@ def main():
     a.add_argument('--model', dest='modeltype', action='store', default='crf',
             help='The type of model to train - crf or svm - defaults to crf')
 
-    a.add_argument('--corpusdir', dest='corpusdir', action='store', default=None,
+    a.add_argument('corpusdir', action='store', default=None,
             help='Directory in which xml papers are found and cached data can be stored.')
 
 
