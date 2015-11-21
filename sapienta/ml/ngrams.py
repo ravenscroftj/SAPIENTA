@@ -151,51 +151,66 @@ class NgramBuilder:
         order = len(words)
 
 
-        if order == 1:
-            glue = self.unigrams[ngram]['total_frequency'] / self.totalUnis
+        try:
 
-        elif order == 2:
-            glue12 = self.bigrams[ngram]['total_frequency'] / self.totalBis
+            if order == 1:
+                glue = self.unigrams[ngram]['total_frequency'] / self.totalUnis
 
-            glue1  = self.unigrams[words[0]]['total_frequency'] / self.totalUnis
-            if glue1 == 0:
-                glue1 = 1 / totalUnis
+            elif order == 2:
+                glue12 = self.bigrams[ngram]['total_frequency'] / self.totalBis
 
-            glue2  = self.unigrams[words[1]]['total_frequency'] / self.totalUnis
+                glue1  = self.unigrams[words[0]]['total_frequency'] / self.totalUnis
+                if glue1 == 0:
+                    glue1 = 1 / totalUnis
 
-            if glue2 == 0:
-                glue2 = 1 / totalUnis
+                glue2  = self.unigrams[words[1]]['total_frequency'] / self.totalUnis
 
-            glue = glue12 * glue12 / glue1 * glue2
+                if glue2 == 0:
+                    glue2 = 1 / totalUnis
 
-
-        elif order == 3:
-            glue123 = self.trigrams[ngram]['total_frequency'] / self.totalTris
-            bi01 = " ".join(words[:2])
-            bi02 = " ".join(words[1:])
+                glue = glue12 * glue12 / glue1 * glue2
 
 
-            print ngram
-            b1 = self.bigrams[bi01]
-            u1 = self.unigrams[words[2]]
+            elif order == 3:
+                glue123 = self.trigrams[ngram]['total_frequency'] / self.totalTris
+                bi01 = " ".join(words[:2])
+                bi02 = " ".join(words[1:])
 
-            glue01 = (self.bigrams[bi01]['total_frequency'] * 
-                        self.unigrams[words[2]]['total_frequency'] 
-                        / self.totalBis * self.totalUnis)
-
-            glue12 = (self.bigrams[bi02]['total_frequency'] * 
-                        self.unigrams[words[0]]['total_frequency'] 
-                        / self.totalBis * self.totalUnis)
-
-            avgglue = 1 / 2 * (glue01 + glue12)
-
-            if avgglue == 0:
-                avgglue = 1 / self.totalBis
-
-            glue = glue123 * glue123 / avgglue
+                b1 = self.bigrams[bi01]
 
 
-        return glue
+
+                u1 = self.unigrams[words[2]]
+
+                glue01 = (self.bigrams[bi01]['total_frequency'] * 
+                            self.unigrams[words[2]]['total_frequency'] 
+                            / self.totalBis * self.totalUnis)
+
+                glue12 = (self.bigrams[bi02]['total_frequency'] * 
+                            self.unigrams[words[0]]['total_frequency'] 
+                            / self.totalBis * self.totalUnis)
+
+                avgglue = 1 / 2 * (glue01 + glue12)
+
+                if avgglue == 0:
+                    avgglue = 1 / self.totalBis
+
+                glue = glue123 * glue123 / avgglue
+
+
+            return glue
+
+        except KeyError as e:
+            self.logger.warn("Could not find '%s' in ngrams list - this is probably ok but if it happens to much something is wrong")
+            self.logger.warn(e)
+ 
+            #with open("bigrams.txt","wb") as f:
+            #    for key in self.bigrams.keys():
+            #        f.write(key+"\n")
+            return 0
+
+
+
 
 
 

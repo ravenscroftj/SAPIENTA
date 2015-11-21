@@ -4,29 +4,58 @@ Given the path to a set of 'cached features', rebuild the ngrams in the cache
 import os
 import cPickle
 import logging
+import sys
 
+from sapienta.ml.train import FeatureExtractorBase:
+
+
+
+features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
 
 def main():
     """This is where the magic happens"""
 
+    from argparse import ArgumentParser
+
+
+    a = ArgumentParser(description='Build an ngrams model from a set of papers')
+
+    a.add_argument("papersDirectory", help="Where papers to build ngrams model from are stored.")
+
+
+    logging.basicConfig(level=logging.INFO)
+
+
     logger = logging.getLogger("rebuild_ngrams:main")
 
-    cachePath = "/home/james/tmp/combined/raw/cachedFeatures"
 
-    featFiles = []
+    cachePath = os.path.join(papersDir, "cachedFeatures")
 
-    for root, dirs, files in os.walk(cachePath):
 
-        for file in files:
-            if file.endswith(".xml"):
-                featFiles.append(os.path.join(root, file))
+    FExtractor = FeatureExtractorBase("", "", cacheDir, features )
+
+    if not os.path.exists(cachePath):
+        logger.info("Creating cache dir at " + cachePath)
+        os.makedirs(cachePath)
+
+    featFiles = [ f for f in os.listdir(papersDir) of f.endswith(".xml") ]
 
     for file in featFiles:
-        
-        logger.info("Processing file %s", file)
 
-        with open(file,'rb') as f:
-            features = cPickle.load(f)
+        cacheFile = os.path.join(cachePath,file)
+        
+        if os.path.exists(cacheFile):
+ 
+            logger.info("Loading cached features from %s", cacheFile)
+
+            with open(cacheFile,'rb') as f:
+                features = cPickle.load(f)
+
+        else:
+            logger.info("Extracting features from %s", file)
+            features = FExtractor.extractFeatures(file)
+
+        logger.info("Processing file %s", file)
 
         logger.info("Found %d sentences", len(features))
 
@@ -43,4 +72,5 @@ def main():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
+
     main()

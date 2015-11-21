@@ -78,6 +78,8 @@ def main():
     os.path.join(os.path.dirname(args.paperFile), "cachedFeatures"), 
     features)
 
+    anno.annotate(args.paperFile)
+
     print args.paperFile,":",">".join(anno.annotate(args.paperFile))
 
 if __name__ == "__main__":

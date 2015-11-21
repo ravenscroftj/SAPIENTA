@@ -128,6 +128,9 @@ class SAPIENTATrainer(FeatureExtractorBase):
         FeatureExtractorBase.__init__(self, modelFile, ngramCacheFile,
         cacheDir, features, logger, lock)
 
+        if not os.path.exists(cacheDir):
+            os.makedirs(cacheDir)
+
 
     #------------------------------------------------------------------------------------------------
 
@@ -318,7 +321,7 @@ def main():
 
     ngramsFile = os.path.join(args.paperDirectory, "ngrams.pickle")
     
-    trainer = SAPIENTATrainer(features, cacheDir, args.modelFile, 
+    trainer = DefaultTrainer(features, cacheDir, args.modelFile, 
         ngramsFile, logging.getLogger("sapienta.trainer"))
     
     all_papers = [ os.path.join(args.paperDirectory,f) for f in
