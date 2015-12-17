@@ -28,6 +28,8 @@ class BaseMQService:
         self.logger.info("Connecting to MQ server on %s",
                 self.config['SAPIENTA_MQ_HOST'] )
 
+        self.channel.basic_qos(prefetch_count=10)
+
         # declare exchange
         self.channel.exchange_declare(
                 exchange=self.config['SAPIENTA_MQ_EXCHANGE'],
