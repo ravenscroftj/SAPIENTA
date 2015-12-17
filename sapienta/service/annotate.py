@@ -43,6 +43,11 @@ class AnnotateMQService(BaseMQService):
         with open(outname, 'rb') as f:
             payload = f.read()
 
+        outsock = os.fdopen(fd,'w')
+        outsock.close()
+        outsock = os.fdopen(od,'w')
+        outsock.close()
+
         self.logger.info("Removing temporary file %s", fname)
         os.remove(fname)
         self.logger.info("Removing temporary file %s", outname)
