@@ -27,12 +27,14 @@ import pdb
 import os
 import re
 
+import sapienta
+
 bnc = BncFilter()
 
 #figure out where the wsdl file is
 wsdlPath = 'file:' + os.path.join(os.path.dirname(__file__), "../../ccg_binding.wsdl")
-#wsdlPath = 'file:/home/james/tmp/ccg_binding.wsdl'
 
+print wsdlPath
 
 logger = logging.getLogger(__name__)
     
@@ -203,7 +205,10 @@ class Features:
 class SoapClient:
     
     def __init__(self):
+        print wsdlPath
         self.suds = Client(wsdlPath)
+        if 'SAPIENTA_CANDC_SOAP_LOCATION' in sapienta.app.config:
+            self.suds.options.location = sapienta.app.config['SAPIENTA_CANDC_SOAP_LOCATION']
         
     def callSoap(self, s):
         #TODO ascii only input? caused by soap server?
@@ -299,6 +304,7 @@ class TestCandC(unittest.TestCase):
     
     def setUp(self):
         self.client = SoapClient()
+
         
     def testCallSoap(self):
         result = self.client.callSoap(u'Pierre thinks that Mary persuaded Bill to eat the apple.')
