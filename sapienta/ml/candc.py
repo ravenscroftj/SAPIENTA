@@ -209,6 +209,10 @@ class SoapClient:
         self.suds = Client(wsdlPath)
         if 'SAPIENTA_CANDC_SOAP_LOCATION' in sapienta.app.config:
             self.suds.options.location = sapienta.app.config['SAPIENTA_CANDC_SOAP_LOCATION']
+        else:
+            self.suds.options.location = "http://127.0.0.1:9004/"
+
+        print self.suds.options.location
         
     def callSoap(self, s):
         #TODO ascii only input? caused by soap server?
