@@ -21,12 +21,13 @@ class FeatureExtractorBase:
     """This class has some reusable functions for extracting features
     """
 
-    def __init__(self, modelFile, ngramsFile, cacheDir, features, logger=None,
+    def __init__(self, modelFile, ngramsFile, cacheDir, features, config={}, logger=None,
     lock=None):
         self.modelFile = modelFile
         self.ngramCacheFile = ngramsFile
         self.cacheDir = cacheDir
         self.features = features
+        self.config = config
 
         if logger == None:
             self.logger = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ class FeatureExtractorBase:
 
             parser = SciXML()
             doc = parser.parse(file)
-            candcClient = SoapClient()
+            candcClient = SoapClient(self.config)
             processedSentences = []
 
 

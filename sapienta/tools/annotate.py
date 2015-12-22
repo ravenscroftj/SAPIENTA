@@ -130,7 +130,7 @@ class BaseAnnotator(object):
 #MODEL_PATH = str(os.path.join(config['MODELS_DIR'], "a.model"))
 class LocalPythonAnnotator(BaseAnnotator):
 
-    def __init__(self):
+    def __init__(self,config=config,logger=None):
         from sapienta.ml.annotate import CRFAnnotator
         from tempfile import mkdtemp
 
@@ -141,7 +141,7 @@ class LocalPythonAnnotator(BaseAnnotator):
         features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
 
 
-        self.annotator = CRFAnnotator(modelFile, ngramsFile, cacheDir, features)
+        self.annotator = CRFAnnotator(modelFile, ngramsFile, cacheDir, features, config, logger)
 
     #------------------------------------------------------------------------- 
     def annotate(self, filename, outfilename):

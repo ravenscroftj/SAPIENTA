@@ -10,9 +10,9 @@ class CRFAnnotator(FeatureExtractorBase):
     """This class can be used as a standalone sentence annotator
     """
 
-    def __init__(self, modelFile, ngramsFile, cacheDir, features):
+    def __init__(self, modelFile, ngramsFile, cacheDir, features, config={}, logger=None):
         FeatureExtractorBase.__init__(self, modelFile, ngramsFile, cacheDir,
-        features)
+        features, config=config, logger=logger)
 
 
         #load ngrams

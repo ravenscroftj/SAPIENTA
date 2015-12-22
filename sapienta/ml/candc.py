@@ -204,11 +204,11 @@ class Features:
 
 class SoapClient:
     
-    def __init__(self):
+    def __init__(self, config=sapienta.app.config):
         print wsdlPath
         self.suds = Client(wsdlPath)
-        if 'SAPIENTA_CANDC_SOAP_LOCATION' in sapienta.app.config:
-            self.suds.options.location = sapienta.app.config['SAPIENTA_CANDC_SOAP_LOCATION']
+        if 'SAPIENTA_CANDC_SOAP_LOCATION' in config:
+            self.suds.options.location = config['SAPIENTA_CANDC_SOAP_LOCATION']
         else:
             self.suds.options.location = "http://127.0.0.1:9004/"
 
