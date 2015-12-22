@@ -139,7 +139,7 @@ def annotate(work):
         my_anno.annotate( anno_infile, outfile )
 
         if options.benchmark:
-            bmk['anno_start'] = time.clock()
+            bmk['anno_stop'] = time.clock()
 
     if options.benchmark:
         resultq.put(bmk)
@@ -217,24 +217,24 @@ def main():
             w.writerow(["file","size", "pdftime", "splittime", "annotime"])
 
             while not rq.empty():
-                bmk = q.get()
+                bmk = rq.get()
     
                 result = [bmk['paper'], bmk['size']]
 
                 if 'pdfx_start' in bmk:
-                    result.append(bmk['pdfx_start'] - bmkpdf['pdfx_stop'])
+                    result.append(bmk['pdfx_stop'] - bmk['pdfx_start'])
                 else:
                     result.append(0)
 
 
                 if 'split_start' in bmk:
-                    result.append(bmk['split_start'] - bmkpdf['split_stop'])
+                    result.append(bmk['split_stop'] - bmk['split_start'])
                 else:
                     result.append(0)
 
 
                 if 'anno_start' in bmk:
-                    result.append(bmk['anno_start'] - bmkpdf['anno_stop'])
+                    result.append(bmk['anno_stop'] - bmk['anno_start'])
                 else:
                     result.append(0)
 
