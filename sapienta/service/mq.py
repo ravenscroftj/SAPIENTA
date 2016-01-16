@@ -18,10 +18,16 @@ class BaseMQService:
     def connect(self):
         """Connect the MQ client to the broker"""
 
+	if 'SAPIENTA_MQ_USER' in self.config:
+            logging.info("Using authentication username: %s", self.config['SAPIENTA_MQ_USER'])
+            auth = pika.credentials.PlainCredentials(self.config['SAPIENTA_MQ_USER'], self.config['SAPIENTA_MQ_PASS'])
+	else:
+            auth = None
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(
                     host=self.config['SAPIENTA_MQ_HOST'],
                     connection_attempts=10,
-                    retry_delay=5))
+                    retry_delay=5,
+                    credentials=auth))
 
         self.channel = self.connection.channel()
 
