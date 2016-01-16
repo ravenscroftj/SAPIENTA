@@ -81,7 +81,7 @@ def annotate(work):
 
 
     #annotation requires splitting
-    if(options.annotate):
+    if(options.annotate and not options.nosplit):
         options.split = True
 
             
@@ -124,7 +124,7 @@ def annotate(work):
             bmk['split_stop'] = time.clock()
        
 
-        anno_infile = outfile
+    anno_infile = outfile
 
     if(options.annotate):
 
@@ -157,6 +157,8 @@ def main():
 
     parser.add_option("--splitter", dest="splitter", default="sssplit", 
             help="Choose which sentence splitter to use [sssplit,textsentence]")
+    parser.add_option("--nosplit",dest="nosplit",action="store_true",
+            help="Turn off splitting when annotating (if your corpus is already split and you just want to annotate)")
     parser.add_option("-a", "--annotate", action="store_true", dest="annotate",
         help="If true, annotate the sentence-split XML with CoreSC labels")
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
