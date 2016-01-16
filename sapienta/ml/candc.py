@@ -34,12 +34,10 @@ bnc = BncFilter()
 #figure out where the wsdl file is
 wsdlPath = 'file:' + os.path.join(os.path.dirname(__file__), "../../ccg_binding.wsdl")
 
-print wsdlPath
 
 logger = logging.getLogger(__name__)
     
-logger.addHandler(logging.FileHandler("ngrams.log"))
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Features:
@@ -205,14 +203,13 @@ class Features:
 class SoapClient:
     
     def __init__(self, config=sapienta.app.config):
-        print wsdlPath
         self.suds = Client(wsdlPath)
         if 'SAPIENTA_CANDC_SOAP_LOCATION' in config:
             self.suds.options.location = config['SAPIENTA_CANDC_SOAP_LOCATION']
         else:
             self.suds.options.location = "http://127.0.0.1:9004/"
 
-        print self.suds.options.location
+	logger.info("Using C&C instance at %s", self.suds.options.location)
         
     def callSoap(self, s):
         #TODO ascii only input? caused by soap server?
