@@ -8,6 +8,7 @@ import sys
 import os
 import logging
 import signal
+import traceback
 
 from multiprocessing import Pool,Queue,current_process
 
@@ -52,10 +53,20 @@ def init_worker(q, rq=None):
 
 
 def anno_e(work):
-    try:
-        annotate(work)
-    except KeyboardInterrupt, e:
-        pass
+    global logger
+
+    errors = 0
+    while errors < 10:
+        try:
+            annotate(work)
+            return
+        except Exception, e:
+            logger.error(e)
+            logger.error(traceback.format_exc())
+            errors += 1
+            logger.info("Attempt %i of 10 Sleeping for 5 secs after encountering an error...", errors+1)
+            time.sleep(5)
+    logger.error("Giving up on %s", work[0])
 
 def annotate(work):
     global my_anno, my_pdfx, my_splitter, logger, resultq
@@ -175,7 +186,7 @@ def main():
     
     (options, args) = parser.parse_args()
 
-    candc_hosts = options.candc.split(",")
+    candc_hosts = [ x for x in options.candc.split(",") if x.strip() != "" ]
 
     if(options.verbose):
         logging.basicConfig(level=logging.DEBUG)
