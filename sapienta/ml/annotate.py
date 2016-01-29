@@ -1,5 +1,6 @@
 import avl
 import os
+import csv
 import logging
 import cPickle
 import crfsuite
@@ -33,7 +34,7 @@ class CRFAnnotator(FeatureExtractorBase):
 
     #------------------------------------------------------------------------------------------------
 
-    def annotate(self, file):
+    def annotate(self, file, marginal=False):
         """Annotate the given input file with coresc labels"""
 
         sents = self.extractFeatures(file, cache=False)
@@ -43,6 +44,20 @@ class CRFAnnotator(FeatureExtractorBase):
         self.tagger.set(items)
         
         labels = list(self.tagger.viterbi())
+
+        if marginal:
+
+            with open(file +".marginal.txt","wb") as f:
+
+
+
+                for i in range(len(sents)):
+                    row = [i]
+                    marginals = sorted( [ (x, self.tagger.marginal(x,i)) for x in self.tagger.labels() ], key=lambda x: x[1], reverse=True)
+
+                    f.write("Sentence: %d %r\n" % (i,marginals))
+                    
+                    
 
         return { s[0]: s[1] for s in zip([s.sid for s in sents],labels) }
 

@@ -64,6 +64,8 @@ def annotate(work):
 
     name,ext = os.path.splitext(infile)
 
+    my_anno.marginal = options.marginal
+
     bmk = {}
 
     if not(os.path.exists(infile)):
@@ -155,6 +157,8 @@ def main():
     parser.add_option("-s", "--split-sent", action="store_true", dest="split",
         help="If true, split sentences using NLTK sentence splitter")
 
+    parser.add_option("--marginal", dest="marginal", default=False,
+            action="store_true", help="If annotating produce marginal labels in <filename>.marginal.txt")
     parser.add_option("--splitter", dest="splitter", default="sssplit", 
             help="Choose which sentence splitter to use [sssplit,textsentence]")
     parser.add_option("-a", "--annotate", action="store_true", dest="annotate",
@@ -184,6 +188,9 @@ def main():
     if( len(args) < 1):
         parser.print_help()
         sys.exit(1)
+
+    if(options.annotate):
+        a = Annotator()
 
     if options.cpus > 0:
         q = Queue()
