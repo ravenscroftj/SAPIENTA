@@ -4,7 +4,7 @@ import re
 import lxml.etree as ET
 
 
-highLevelContainerElements = ["DIV", "sec", "section", "abstract"]
+highLevelContainerElements = ["DIV", "sec", "section", "abstract", "article-title"]
 pLevelContainerElements = ["P", "p", "region"]
 referenceElements = ["REF", 'xref']
 commonAbbreviations = ['Fig','Figs', 'Ltd', 'St', 'al', 'ca', 'vs', 'viz', 'prot', 'Co', 'Ltd', 'No', 'Chem']
