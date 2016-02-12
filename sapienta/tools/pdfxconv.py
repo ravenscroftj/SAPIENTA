@@ -106,7 +106,7 @@ def annotate(work):
         if options.benchmark:
             bmk['pdfx_start'] = time.clock()
        
-        p.convert(infile, outfile)
+        my_pdfx.convert(infile, outfile)
         split_infile = outfile
 
         if options.benchmark:

@@ -4,9 +4,8 @@ import re
 import lxml.etree as ET
 
 
-highLevelContainerElements = ["DIV", "sec", "section"]
+highLevelContainerElements = ["DIV", "sec", "section", "abstract"]
 pLevelContainerElements = ["P", "p", "region"]
-abstractLevelContainerElements = ["abstract", "ABSTRACT"]
 referenceElements = ["REF", 'xref']
 commonAbbreviations = ['Fig','Figs', 'Ltd', 'St', 'al', 'ca', 'vs', 'viz', 'prot', 'Co', 'Ltd', 'No', 'Chem']
 
@@ -47,8 +46,8 @@ class SSSplit:
             self.split_plevel_container(el)
             
         #find and split abstract (Pubmed DTD special case high level container)
-        for el in self.root.iter("abstract"):
-            self.split_high_level_container(el)
+        #for el in self.root.iter("abstract"):
+        #    self.split_high_level_container(el)
 
         #now we handle remaining high level containers such as <DIV> or <sec>
         for container in highLevelContainerElements:
@@ -78,7 +77,7 @@ class SSSplit:
             for el in set(containerEl.findall(containerType)):
                 self.split_plevel_container(el)
 
-        if self.no_plevel_splits:
+        if len(containerEl.findall('.//s')) < 1:
             self.split_plevel_container(containerEl)
 
         
@@ -97,7 +96,7 @@ class SSSplit:
         siblings = list(containerEl)
 
         #if the container element has text insert in front of other siblings
-        if containerEl.text != None:
+        if (containerEl.text != None) and (containerEl.text.strip() != ""):
             self.no_plevel_splits = False
             siblings = [ containerEl.text] + siblings
 
