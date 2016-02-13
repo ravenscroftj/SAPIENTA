@@ -130,7 +130,10 @@ def annotate(work):
         if options.benchmark:
             bmk['split_start'] = time.clock()
        
-        my_splitter.split(split_infile, outfile)
+        print "Pretty mode is ", options.pretty
+        
+
+        my_splitter.split(split_infile, outfile, pp=options.pretty)
 
 
         if options.benchmark:
@@ -174,6 +177,10 @@ def main():
             help="Choose which sentence splitter to use [sssplit,textsentence]")
     parser.add_option("--nosplit",dest="nosplit",action="store_true",
             help="Turn off splitting when annotating (if your corpus is already split and you just want to annotate)")
+
+    parser.add_option('--no-whitespace', dest='pretty', default=True,action="store_false",
+            help="If set then removes all whitespace from output document")
+
     parser.add_option("-a", "--annotate", action="store_true", dest="annotate",
         help="If true, annotate the sentence-split XML with CoreSC labels")
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
