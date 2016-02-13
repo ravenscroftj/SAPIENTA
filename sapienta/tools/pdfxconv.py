@@ -133,7 +133,8 @@ def annotate(work):
         print "Pretty mode is ", options.pretty
         
 
-        my_splitter.split(split_infile, outfile, pp=options.pretty)
+        my_splitter.split(split_infile, outfile, 
+                pp=options.pretty, mode2=options.mode2)
 
 
         if options.benchmark:
@@ -177,6 +178,8 @@ def main():
             help="Choose which sentence splitter to use [sssplit,textsentence]")
     parser.add_option("--nosplit",dest="nosplit",action="store_true",
             help="Turn off splitting when annotating (if your corpus is already split and you just want to annotate)")
+
+    parser.add_option('--mode2', dest='mode2', default=False, action="store_true", help="If true then formats in a SAPIENTA compatible way.")
 
     parser.add_option('--no-whitespace', dest='pretty', default=True,action="store_false",
             help="If set then removes all whitespace from output document")

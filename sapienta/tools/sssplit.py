@@ -2,6 +2,7 @@
 import sys
 import re
 import lxml.etree as ET
+import os
 
 
 highLevelContainerElements = ["DIV", "sec", "section", "abstract", "article-title"]
@@ -34,9 +35,11 @@ class SSSplit:
             self.authors.append(" ".join(list(el.itertext())))
 
 
-    def split(self, filename, outname=None, pp=True, *args, **kwargs):
+    def split(self, filename, outname=None, pp=True, mode2=False, *args, **kwargs):
         tree = ET.parse(filename)
         self.root = tree.getroot()
+
+
 
         #load list of referenced authors for sentence splitting purposes
         self.load_authors()
@@ -57,6 +60,25 @@ class SSSplit:
 
         #assign sentence ids
         self.normalize_sents()
+
+        if mode2:
+
+            docname = os.path.splitext(filename)[0]
+
+            tree.docinfo.clear()
+            print tree.docinfo.doctype
+
+            paper = ET.Element('PAPER')
+            mode2 = ET.SubElement(paper, 'mode2', 
+                    name=docname,
+                    hasDoc="yes",
+                    version="597"
+                    )
+
+            paper.append(self.root)
+
+            tree = ET.ElementTree(paper)
+
 
         if outname != None:
             tree.write(outname, pretty_print=pp)
