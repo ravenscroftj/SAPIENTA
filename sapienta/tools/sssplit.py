@@ -6,7 +6,7 @@ import lxml.etree as ET
 
 highLevelContainerElements = ["DIV", "sec", "section", "abstract", "article-title"]
 pLevelContainerElements = ["P", "p", "region"]
-referenceElements = ["REF", 'xref']
+referenceElements = ["REF", 'xref', 'ref']
 commonAbbreviations = ['Fig','Figs', 'Ltd', 'St', 'al', 'ca', 'vs', 'viz', 'prot', 'Co', 'Ltd', 'No', 'Chem']
 
 #from sapienta.tools.mlsplit import text_to_features
@@ -52,7 +52,8 @@ class SSSplit:
         #now we handle remaining high level containers such as <DIV> or <sec>
         for container in highLevelContainerElements:
             for el in self.root.iter(container):
-                self.split_high_level_container(el)
+                if len(list(el.iterancestors(*referenceElements))) < 1:
+                    self.split_high_level_container(el)
 
         #assign sentence ids
         self.normalize_sents()
@@ -71,13 +72,17 @@ class SSSplit:
         Examples of high level containers are <DIV> in SciXML and <section> 
         in DoCo XML"""
 
-        self.no_plevel_splits = True
-
         for containerType in pLevelContainerElements:
             for el in set(containerEl.findall(containerType)):
                 self.split_plevel_container(el)
 
-        if len(containerEl.findall('.//s')) < 1:
+        contains_sub_elements = False
+        for container in highLevelContainerElements:
+            if len(containerEl.findall('.//%s' % container)) > 0:
+                contains_sub_elements = True
+                break
+
+        if len(containerEl.findall('.//s')) < 1 and not contains_sub_elements:
             self.split_plevel_container(containerEl)
 
         
