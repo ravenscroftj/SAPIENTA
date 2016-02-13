@@ -34,7 +34,7 @@ class SSSplit:
             self.authors.append(" ".join(list(el.itertext())))
 
 
-    def split(self, filename, outname=None, *args, **kwargs):
+    def split(self, filename, outname=None, pp=True, *args, **kwargs):
         tree = ET.parse(filename)
         self.root = tree.getroot()
 
@@ -59,9 +59,9 @@ class SSSplit:
         self.normalize_sents()
 
         if outname != None:
-            tree.write(outname, pretty_print=True)
+            tree.write(outname, pretty_print=pp)
         else:
-            return ET.tostring(self.root, pretty_print=True)
+            return ET.tostring(self.root, pretty_print=pp)
 
     def split_high_level_container(self, containerEl):
         """A high level container is a section or similar
