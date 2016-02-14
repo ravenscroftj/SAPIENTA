@@ -12,7 +12,8 @@ setup(
             #'text-sentence>=0.14',
             'lxml>=3.4.4',
             'pyavl>=1.12',
-            'suds>=0.4'],
+            'suds>=0.4',
+            'Flask-SocketIO>=1.2'],
 
     entry_points = {"console_scripts" : [
         'pdfxconv = sapienta.tools.pdfxconv:main',
