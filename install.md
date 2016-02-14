@@ -178,6 +178,6 @@ environment.
 # What next?
 
 Now that you've installed everything, you will probably want to look [this
-guide](https://github.com/ravenscroftj/SAPIENTA/wiki/Configuration) on configuring SAPIENTA and if you want to try and retrain the model
+guide](https://bitbucket.org/partridge/sapienta/wiki/Configuration) on configuring SAPIENTA and if you want to try and retrain the model
 you may want to [read
 this](https://github.com/ravenscroftj/SAPIENTA/wiki/Training).
