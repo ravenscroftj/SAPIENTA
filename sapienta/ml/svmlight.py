@@ -18,35 +18,38 @@ class SVMLightTrainer(SAPIENTATrainer):
     def train(self, trainfiles):
         self.preprocess(trainfiles)
 
-        encoder = SVMLightEncoder(self.ngrams)
+        encoder = SVMLightEncoder(self.ngrams, self.logger)
 
         cats = sorted(ALL_CORESCS)
 
         labelList = []
         featList  = []
         
-        f = open("features.svm", 'wb')
 
         for file in trainfiles:
 
             sents = self.extractFeatures(file)
-
-            encoder.writeSentences(sents, f)
 
             self.logger.info("Encoding features from %s as SVMLight", file)
             for sent in sents:
                 label = sent.corescLabel
                 encoded = encoder.encodeSentence(sent)
 
-                featList.append(encoded)
-                labelList.append(cats.index(label) + 1)
 
+                try:
+                    lindex = cats.index(label) + 1
+
+
+                    featList.append(encoded)
+
+                    labelList.append(lindex)
+                except:
+                    self.logger.warn("Skipping sentence with no valid label: SENT: '%s', LABEL: '%s' ", sent, label)
+                    continue
 
             self.logger.info("Currently have %d label:sentence pairs",
             len(featList))
 
-        #close the features file
-        f.close()
 
         self.logger.info("Training SVM Model...")
 
@@ -65,7 +68,7 @@ class SVMLightTrainer(SAPIENTATrainer):
                 self.ngrams['bigram']  = avl.new(self.ngrams['bigram'])
 
 
-        encoder = SVMLightEncoder(self.ngrams)
+        encoder = SVMLightEncoder(self.ngrams, self.logger)
 
         #load the model
         m = svm_load_model(self.modelFile)
@@ -84,8 +87,14 @@ class SVMLightTrainer(SAPIENTATrainer):
             for sent in sents:
                 label = sent.corescLabel
                 encoded = encoder.encodeSentence(sent)
-                labels.append(label)
-                feats.append(encoded)
+
+                if label in ALL_CORESCS:
+
+                    labels.append(label)
+                    feats.append(encoded)
+
+                else:
+                    self.logger.warn("Skipping sent '%s' because invalid label '%s'", sent,label)
 
             all_labs = sorted(ALL_CORESCS)
 
@@ -103,9 +112,10 @@ class SVMLightTrainer(SAPIENTATrainer):
 class SVMLightEncoder:
     """Given a feature list, map actual feature values to SVMLight indices"""
 
-    def __init__(self, ngrams):
+    def __init__(self, ngrams, logger):
 
         self.ngrams = ngrams
+        self.logger = logger
 
     def encodeSentence(self, sent):
         """Given a sentence, return svmlight syntax for features within it
@@ -115,31 +125,35 @@ class SVMLightEncoder:
 
         candcSentence = sent.candcFeatures
         
-        sentFeatures = Counter()
+        sentFeatures = {}
 
         #first, we do absolute location of the sentence within the paper
-        sentFeatures[baseFeatureIndex] = ord(sent.absoluteLocation) - 64
-        baseFeatureIndex += 1
+        sentFeatures['absloc'] = ord(sent.absoluteLocation) - 64
 
         #next we are concerned with the length of the sentence (A-F -> 1-6)
-        sentFeatures[baseFeatureIndex] = ord(sent.length) - 64
-        baseFeatureIndex += 1
+        sentFeatures['sentlen'] = ord(sent.length) - 64
 
         #now we insert struct-1 i.e. which third of the paper the sentence is in
-        sentFeatures[baseFeatureIndex] = ord(sent.locationInHeader) - 64
-        baseFeatureIndex += 1
+        sentFeatures['struct-1'] = sent.locationInHeader
 
         #now insert section/header ID
-        sentFeatures[baseFeatureIndex] = sent.headerId
-        baseFeatureIndex += 1
+        sentFeatures['section_id'] = sent.headerId
 
         for label, ngrams in {'unigram' : candcSentence.unigrams, 'bigram':candcSentence.bigrams }.items():
 
             for ngram in ngrams:
                 idx = self.ngrams[label].index(ngram)
-                sentFeatures[(idx + baseFeatureIndex)] = 1
+                sentFeatures[ngram] = 1
 
-            baseFeatureIndex += len(ngrams)
+
+        for verb in candcSentence.verbs:
+            sentFeatures['verb_%s' % verb] = 1
+
+        for verbclass in candcSentence.verbClasses:
+            sentFeatures['verbClass_%s' % verbclass] = 1
+
+        for verbpos in candcSentence.verbsPos:
+            sentFeatures['verbPos_%s' % verbpos] = 1
 
         return sentFeatures
     
@@ -156,7 +170,11 @@ class SVMLightEncoder:
             label = sent.corescLabel
             encoded = self.encodeSentence(sent)
 
-            catnum = cats.index(label) + 1
+            try:
+                catnum = cats.index(label) + 1
+            except:
+                self.logger.warn("Skipping sentence with no valid label: SENT: '%s', LABEL: '%s' ", sent, label)
+                continue
 
             labelList.append(catnum)
             featList.append(encoded)

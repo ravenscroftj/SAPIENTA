@@ -47,16 +47,17 @@ class CRFAnnotator(FeatureExtractorBase):
 
         if marginal:
 
-            with open(file +".marginal.txt","wb") as f:
+            with open(file +".marginal.csv","wb") as f:
 
+                csvw = csv.writer(f)
 
+                csvw.writerow(['sid'] + list(self.tagger.labels()) )
 
                 for i in range(len(sents)):
-                    row = [i]
-                    marginals = sorted( [ (x, self.tagger.marginal(x,i)) for x in self.tagger.labels() ], key=lambda x: x[1], reverse=True)
+        
+                    marginals = [ self.tagger.marginal(x,i) for x in self.tagger.labels() ]
 
-                    f.write("Sentence: %d %r\n" % (i,marginals))
-                    
+                    csvw.writerow( [ i+1 ] + marginals)
                     
 
         return { s[0]: s[1] for s in zip([s.sid for s in sents],labels) }

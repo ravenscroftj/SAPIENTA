@@ -93,9 +93,14 @@ class CrossValidationTrainer:
             os.mkdir(self.cacheDir)
             self.logger.info("Generating feature cache directory")
 
-        genFileName = lambda x: os.path.join(corpusDir, x['filename'] + 
-                                    "_mode2." + x['annotator'] + ".xml")
 
+        def genFileName(x):
+            if x['annotator'] != "":
+                return os.path.join(corpusDir, x['filename'] + 
+                                    "_mode2." + x['annotator'] + ".xml") 
+            else:
+                return os.path.join(corpusDir, x['filename'] + 
+                                    "_mode2.xml")
 
         allFiles =  [f for f in [ genFileName(fdict) 
                         for x in self.folds for fdict in x ] 
@@ -112,8 +117,7 @@ class CrossValidationTrainer:
             sents = 0
             
             for filedict in fold:
-                fname = os.path.join(corpusDir, filedict['filename'] + "_mode2." + 
-                        filedict['annotator'] + ".xml")
+                fname = genFileName(filedict)
 
                 sents += int(filedict['total_sentence'])
 
