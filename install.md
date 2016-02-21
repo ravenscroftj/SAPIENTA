@@ -26,24 +26,12 @@ lemmatizing. Specifically, the SOAP server is used, since it can be started in
 the background and only loads the models into memory once (previously each
 worker loaded a new instance of CandC, quickly exhausting system RAM).
 
-You'll need to go [here](http://svn.ask.it.usyd.edu.au/trac/candc) to register
-and account in order to download [the
-tools](http://svn.ask.it.usyd.edu.au/download/candc/candc-1.00.tbz2).
-Registration is free and as soon as you log in you can access the files. It is
-possible to download pre-compiled binaries for C and C, I recommend compiling
-the system yourself rather than using these (unless you are trying to install
-on Windows, in which case, using the prebuilt binaries is much easier).
+Download the [C&C source bundle](https://www.dropbox.com/s/uoyu3jlr11wb9jd/candc-1.00.tbz2?dl=0). If you are running MacOSX or Windows you can download the binary files for C&C here ([Windows](https://www.dropbox.com/s/vxajm1870gf08za/candc-cygwin-1.00.tgz?dl=0) and ([Mac](https://www.dropbox.com/s/m7739wiaoxfl7lg/candc-macosxu-1.00.tgz?dl=0))
+and therefore skip the compiling C&C tools step below. You will still need to download and extract the models.
 
 You will also need to download:
 
- * [models](http://svn.ask.it.usyd.edu.au/download/candc/models-1.02.tbz2) (models trained on CCGbank 02-21 and MUC 7)
- * [pos_bio](http://www.cl.cam.ac.uk/research/nl/nl-download/candc/pos_bio-1.00.tbz2) (Models for biomedical parsing (for description see Biomedical
-   Parsing) 
- * super_coresc (this is not provided by CandC tools, you can find it
-   [here](https://bitbucket.org/partridge/sapienta/downloads/super_coresc.tar.7z) )
- * CandC Markedup File (again this is privately hosted
-   [here](https://bitbucket.org/partridge/sapienta/downloads/markedup_new)
-   )
+ * [models_all from dropbox]() which contains all of the C&C annotation models. Extract the directory inside into the SAPIENTA folder.
 
 The toolkit requires gSOAP2 in order to build the SOAP server which is used by
 SAPIENTA. Your operating system should provide a package for this library, or
@@ -93,17 +81,13 @@ instructions for the server.
 
 ### Extracting C and C Models
 
-The final step to configuring the server is to extract the models into the
+The final step to configuring the server is to extract the models (downloaded from dropbox above) into the
 same directory as `candc-1.00` as shown below:
 
-    parent directory
+    parent directory - SAPIENTA git repo probably
        --candc-1.00
        --models**
 
-
-Extract all models to the same place, extracting markedup_new last and placing it in the models/parser/cats/ folder. 
-the main models archive (models-1.0-2.tbsz2) will extract to the correct directory but the `pos_bio` and `super_coresc`
-archives will need to be extracted and moved into this location.
 
 ### Running C and C Server
 
@@ -111,9 +95,6 @@ Now, copy the file sapienta/opt/candc/run_server.sh to the candc-1.00/bin
 directory, and execute it directly ./run_server.sh. If everything has been
 properly configured, you should see `waiting for connections on
 127.0.0.1:9004`. 
-
-
-
 
 
 ## CRFSuite
@@ -162,6 +143,8 @@ conflicting dependencies between Python applications and allows you to install
 the necessary dependency packages without superuser access on the machine in
 question.
 
+**Skip this bit if you are installing inside a Partridge virtualenv - just use the existing one rather than creating a new one**
+
 It is recommended that a virtualenv is set up in the top level of the project directory.
 An example installation procedure with virtualenv is as follows:
     
@@ -195,6 +178,6 @@ environment.
 # What next?
 
 Now that you've installed everything, you will probably want to look [this
-guide](https://github.com/ravenscroftj/SAPIENTA/wiki/Configuration) on configuring SAPIENTA and if you want to try and retrain the model
+guide](https://bitbucket.org/partridge/sapienta/wiki/Configuration) on configuring SAPIENTA and if you want to try and retrain the model
 you may want to [read
 this](https://github.com/ravenscroftj/SAPIENTA/wiki/Training).
