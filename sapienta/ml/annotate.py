@@ -51,7 +51,7 @@ class CRFAnnotator(FeatureExtractorBase):
 
                 csvw = csv.writer(f)
 
-                csvw.writerow(['sid'] + list(self.tagger.labels()) )
+                csvw.writerow(['sid'] + sorted( list(self.tagger.labels()) ) )
 
                 for i in range(len(sents)):
         

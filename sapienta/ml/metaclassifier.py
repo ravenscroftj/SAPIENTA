@@ -6,6 +6,7 @@ import time
 import csv
 import os
 import lasagne
+import sys
 import logging
 import theano.tensor as T
 import numpy as np
@@ -15,7 +16,7 @@ from lasagne.layers import *
 
 ALL_CORESCS = ['Bac', 'Con', 'Exp', 'Goa', 'Hyp', 'Met', 'Mod', 'Mot', 'Obj', 'Obs', 'Res']
 
-N_HIDDEN = 9
+N_HIDDEN = 50
 
 # Optimization learning rate
 LEARNING_RATE = .01
@@ -38,8 +39,11 @@ class MetaClassifier:
         batchsize,seqlen, _ = self.in_layer.input_var.shape
 
         l_lstm = LSTMLayer(self.in_layer, num_units=N_HIDDEN, mask_input=self.i_mask, nonlinearity=lasagne.nonlinearities.tanh)
+        l_back_lstm =  LSTMLayer(self.in_layer, num_units=N_HIDDEN, mask_input=self.i_mask, nonlinearity=lasagne.nonlinearities.tanh,backwards=True)
 
-        l_shp = ReshapeLayer(l_lstm, (-1, N_HIDDEN))
+        l_merge = ElemwiseSumLayer([l_lstm,l_back_lstm])
+
+        l_shp = ReshapeLayer(l_merge, (-1, N_HIDDEN))
 
         l_dense = DenseLayer(l_shp, num_units=len(ALL_CORESCS), nonlinearity=lasagne.nonlinearities.softmax)
 
@@ -147,6 +151,7 @@ def main():
 
     for filename, gt in  load_ground_truth(args.gt_dir):
 
+
         ys.append(csv_to_nnet(gt))
 
         marginals = load_csv_file(os.path.join(args.marginals_dir, filename +"_split.xml.marginal.csv"))
@@ -171,13 +176,17 @@ def main():
 
     m = MetaClassifier()
 
-    val_x = np_xs[:5]
-    val_y = np_ys[:5]
-    val_masks = np_masks[:5]
+    val_x = np_xs[:1]
+    val_y = np_ys[:1]
+    val_masks = np_masks[:1]
 
-    train_x = np_xs[5:]
-    train_y = np_ys[5:]
-    train_masks = np_masks[5:]
+    train_x = np_xs[1:40]
+    train_y = np_ys[1:40]
+    train_masks = np_masks[1:40]
+
+    test_x = np_xs[40:]
+    test_y = np_ys[40:]
+    test_masks = np_masks[40:]
 
     print("Starting training")
 
