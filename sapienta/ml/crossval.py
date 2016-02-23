@@ -71,14 +71,22 @@ class CrossValidationTrainer:
 
     #------------------------------------------------------------------------------------------------
 
-    def train_cross_folds( self, modelType, foldsFile, corpusDir, features):
-        """Train SAPIENTA on folds described in foldsFile."""
+    def train_cross_folds( self, modelType, corpusDir, features, foldsFile=None, loo=False ):
+        """Train SAPIENTA on folds described in foldTable."""
 
         from sapienta.ml.folds import get_folds
         
         self.modelType = modelType
 
-        self.folds = get_folds( foldsFile )
+        if foldsFile == None and not loo:
+            self.logger.error("You must either specify --leave-one-out or --foldTable=filename.csv")
+            return
+
+        if foldsFile != None:
+            self.folds = get_folds( foldsFile )
+        else:
+            self.folds = None
+        
         self.corpusDir = corpusDir
 
         if not os.path.exists(os.path.join(corpusDir, "logs")):
@@ -102,44 +110,69 @@ class CrossValidationTrainer:
                 return os.path.join(corpusDir, x['filename'] + 
                                     "_mode2.xml")
 
-        allFiles =  [f for f in [ genFileName(fdict) 
-                        for x in self.folds for fdict in x ] 
-                                    if os.path.exists(f)]
+
     
         fixtures = []
 
-        #TEMPORARY THING THAT STOPS LOOKING AFTER 3 FOLDS
-        #self.folds = self.folds[:1]
 
-        for f, fold in enumerate(self.folds):
+        if self.folds != None:
 
-            testFiles = []
-            sents = 0
-            
-            for filedict in fold:
-                fname = genFileName(filedict)
+            #TEMPORARY THING THAT STOPS LOOKING AFTER 3 FOLDS
+            #self.folds = self.folds[:1]
 
-                sents += int(filedict['total_sentence'])
 
-                if not os.path.isfile(fname):
-                    self.logger.warn("No file %s detected.", fname)
-                else:
-                    testFiles.append(fname)
+            allFiles =  [f for f in [ genFileName(fdict) 
+                        for x in self.folds for fdict in x ] 
+                                    if os.path.exists(f)]
 
-            self.logger.info("Fold %d has %d files and %d sentences total" + 
-                    " (which will be excluded)", f, len(testFiles), sents)
+            for f, fold in enumerate(self.folds):
 
-            #calculate which files to use for training
-            trainFiles = [file for file in allFiles if file not in testFiles]
+                testFiles = []
+                sents = 0
+                
+                for filedict in fold:
+                    fname = genFileName(filedict)
 
-            fixtures.append( ( self.modelType, features, self.cacheDir, self.corpusDir, f, testFiles, trainFiles,None))
-            
+                    sents += int(filedict['total_sentence'])
+
+                    if not os.path.isfile(fname):
+                        self.logger.warn("No file %s detected.", fname)
+                    else:
+                        testFiles.append(fname)
+
+                self.logger.info("Fold %d has %d files and %d sentences total" + 
+                        " (which will be excluded)", f, len(testFiles), sents)
+
+                #calculate which files to use for training
+                trainFiles = [file for file in allFiles if file not in testFiles]
+
+                fixtures.append( ( self.modelType, features, self.cacheDir, self.corpusDir, f, testFiles, trainFiles,None))
+
+        else: #else we do leave-one-out instead of folds
+
+            allFiles = []
+
+            for root, dirs, files in os.walk(self.corpusDir):
+
+                if root.endswith("cachedFeatures"):
+                    continue
+
+                for file in files:
+                    if file.endswith(".xml"):
+                        allFiles.append(os.path.join(root,file))
+
+            #generate leave-one-out fixtures
+            for i, file in enumerate(allFiles):
+                trainFiles = allFiles[0:i] + allFiles[i+1:]
+                testFiles = [file]
+
+                fixtures.append( (self.modelType, features, self.cacheDir, self.corpusDir, i, testFiles, trainFiles, None))
 
         
         #run the training
-        #p = Pool()
-        #results = p.map(train_and_test, fixtures)
-        results = map(train_and_test, fixtures)
+        p = Pool()
+        results = p.map(train_and_test, fixtures)
+        #results = map(train_and_test, fixtures)
 
         #calculate and show results for folds
         for f,r in enumerate(results):
@@ -272,15 +305,15 @@ def main():
     a.add_argument('--features', dest='features', action='store', default=None,
             help="List of features used in training separated by commas.")
 
-    a.add_argument('foldTable', metavar='fold_table_path', type=str,
-            help='')
+    a.add_argument('--foldTable', dest='foldTable', default=None, metavar='fold_table_path', type=str,help='')
+
+    a.add_argument('--leave-one-out', dest='loo', action="store_true")
 
     a.add_argument('--model', dest='modeltype', action='store', default='crf',
             help='The type of model to train - crf or svm - defaults to crf')
 
     a.add_argument('corpusdir', action='store', default=None,
             help='Directory in which xml papers are found and cached data can be stored.')
-
 
     
     t = CrossValidationTrainer()
@@ -301,8 +334,13 @@ def main():
 
         features = args.features
 
+
+    if args.foldTable == None and not args.loo:
+        logging.error("You must either specify --leave-one-out or --foldTable=filename.csv")
+        sys.exit(1)
+
     #make sure the fold table exists
-    if not os.path.isfile(args.foldTable):
+    if not ( args.loo or os.path.isfile(args.foldTable)):
         logging.error("Invalid fold table given %s", args.foldTable)
         sys.exit(1)
 
@@ -317,7 +355,7 @@ def main():
         sys.exit(1)
 
     
-    t.train_cross_folds(args.modeltype, args.foldTable, corpusdir, features)
+    t.train_cross_folds(args.modeltype, corpusdir, features,  args.foldTable, args.loo)
     #t.train_cross_folds("/home/james/tmp/foldTable.csv", "/home/james/tmp/combined/raw", features)
 
 
