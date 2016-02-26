@@ -41,27 +41,32 @@ class MetaClassifier:
         l_lstm = LSTMLayer(self.in_layer, num_units=N_HIDDEN, mask_input=self.i_mask, nonlinearity=lasagne.nonlinearities.tanh)
         l_back_lstm =  LSTMLayer(self.in_layer, num_units=N_HIDDEN, mask_input=self.i_mask, nonlinearity=lasagne.nonlinearities.tanh,backwards=True)
 
+
         l_merge = ElemwiseSumLayer([l_lstm,l_back_lstm])
 
-        l_shp = ReshapeLayer(l_merge, (-1, N_HIDDEN))
 
-        l_dense = DenseLayer(l_shp, num_units=len(ALL_CORESCS), nonlinearity=lasagne.nonlinearities.softmax)
+        l_lstm2 = LSTMLayer(l_merge, num_units=len(ALL_CORESCS), mask_input=self.i_mask, nonlinearity=lasagne.nonlinearities.tanh)
+
+        l_shp = ReshapeLayer(l_lstm2, (-1, len(ALL_CORESCS)))
+
+        l_dense = DenseLayer(l_shp, num_units=len(ALL_CORESCS), nonlinearity=lasagne.nonlinearities.sigmoid)
 
         self.l_out = ReshapeLayer(l_dense, ( batchsize,seqlen, len(ALL_CORESCS) ) )
 
         target_values = T.dtensor3('target_values')
 
         network_output = lasagne.layers.get_output(self.l_out)
+
         # The loss function is calculated as the mean of the (categorical) 
         # cross-entropy between the prediction and target.
-        cost = T.mean( (network_output - target_values) ** 2)
-        #cost = T.nnet.categorical_crossentropy(network_output,target_values).mean()
+        #cost = T.mean( (network_output - target_values) ** 2)
+        cost = T.nnet.categorical_crossentropy(network_output,target_values).mean()
 
         # Retrieve all parameters from the network
         all_params = lasagne.layers.get_all_params(self.l_out,trainable=True)
 
         self.logger.info("Computing updates...")
-        updates = lasagne.updates.adagrad(cost, all_params, LEARNING_RATE)
+        updates = lasagne.updates.nesterov_momentum(cost, all_params, LEARNING_RATE)
 
         # Theano functions for training and computing cost
         self.logger.info("Compiling functions ...")
@@ -78,9 +83,6 @@ class MetaClassifier:
     def test(self):
         pass
 
-
-    def label(self):
-        pass
 
 
 def load_csv_file(cfile):
@@ -123,6 +125,10 @@ def csv_to_nnet(gt):
 
     for i, (sid, labels) in enumerate(gt):
 
+        #if sum([ score for lbl,score in labels]) == 0
+        #    print("Skipping sid {} which has values {}".format(sid,repr(labels)) )
+        #    continue
+
         for lbl,score in labels:
             if lbl == '': continue
             seq[i][ALL_CORESCS.index(lbl)] = score
@@ -139,24 +145,30 @@ def main():
     a.add_argument('marginals_dir', action='store', default=None,
             help="CSV files that detail marginal values from CRF")
 
-
     a.add_argument('gt_dir', action='store',
         help='Location of CSV ground truth for paper labels')
+
+    a.add_argument('--model', action='store', default='model.npz', help='Set the name of the neural network model file to save to write')
+
+    a.add_argument('--continue', dest='continue_training', action='store', default=None, help='Try to read the model file specified and continue training')
+
+    a.add_argument('--epochs', action='store', default=1000, type=int, help='Number of training epochs before halting and writing model to disk.')
 
     args = a.parse_args()
 
 
     ys = []
     xs = []
+    files = []
 
     for filename, gt in  load_ground_truth(args.gt_dir):
-
 
         ys.append(csv_to_nnet(gt))
 
         marginals = load_csv_file(os.path.join(args.marginals_dir, filename +"_split.xml.marginal.csv"))
 
         xs.append(csv_to_nnet(marginals))
+        files.append(filename)
 
 
     max_sents_x = max( [len(x) for x in xs] )
@@ -176,6 +188,13 @@ def main():
 
     m = MetaClassifier()
 
+    if args.continue_training != None:
+        print("Loading model and continuing training...")
+        with np.load(args.continue_training) as f:
+            param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+
+        lasagne.layers.set_all_param_values(m.l_out, param_values)
+
     val_x = np_xs[:1]
     val_y = np_ys[:1]
     val_masks = np_masks[:1]
@@ -187,15 +206,16 @@ def main():
     test_x = np_xs[40:]
     test_y = np_ys[40:]
     test_masks = np_masks[40:]
+    test_files = files[40:]
 
     print("Starting training")
 
-    for epoch in range(1000):
+    for epoch in range(args.epochs):
 
         start = time.clock()
 
-        for _ in range(EPOCH_SIZE):
-            m.train(train_x, train_y, train_masks)
+        #for _ in range(100):
+        m.train(train_x, train_y, train_masks)
 
         cost_val = m.compute_cost(val_x,val_y,val_masks)
 
@@ -203,6 +223,25 @@ def main():
 
         print("Epoch {} validation cost = {}  ({} seconds)").format(epoch,cost_val,end-start)
 
+    
+    rs = m.label(test_x, test_masks)
+
+
+    with open("results.pickle", "wb") as f:
+        import cPickle
+        cPickle.dump(zip(rs,test_files),f)
+
+
+    print("Saving model...")
+
+
+    
+    model_values = lasagne.layers.get_all_param_values(m.l_out)
+
+    #for file, results in zip(rs, test_files):
+    #    print file
+
+    np.savez('model.npz', *lasagne.layers.get_all_param_values(m.l_out))
         
 
 
