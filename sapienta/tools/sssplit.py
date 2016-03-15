@@ -5,9 +5,9 @@ import lxml.etree as ET
 import os
 
 
-highLevelContainerElements = ["DIV", "sec", "section", "abstract", "article-title", "list-item"]
+highLevelContainerElements = ["DIV", "sec", "section", "abstract", "article-title", "list-item","body"]
 pLevelContainerElements = ["P", "p", "region"]
-referenceElements = ["REF", 'xref', 'ref']
+referenceElements = ["REF", 'xref', 'ref', 'contrib-group']
 commonAbbreviations = ['Fig','Figs', 'Ltd', 'St', 'al', 'ca', 'vs', 'viz', 'prot', 'Co', 'Ltd', 'No', 'Chem']
 
 #from sapienta.tools.mlsplit import text_to_features
