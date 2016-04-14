@@ -31,7 +31,7 @@ and therefore skip the compiling C&C tools step below. You will still need to do
 
 You will also need to download:
 
- * [models_all from dropbox]() which contains all of the C&C annotation models. Extract the directory inside into the SAPIENTA folder.
+ * [models_all from dropbox](https://www.dropbox.com/s/8zgsmzbe4ng0reg/models_all.tar.bz2?dl=0) which contains all of the C&C annotation models. Extract the directory inside into the SAPIENTA folder.
 
 The toolkit requires gSOAP2 in order to build the SOAP server which is used by
 SAPIENTA. Your operating system should provide a package for this library, or
