@@ -2,6 +2,20 @@
 {%block title%}Service Status{% endblock %}
 {%block content %}
       <h1>SAPIENTA Service Status</h1>
-      <p>Sapienta is currently running with {{workers}} workers consisting of {{slots}} parallel processing threads in total.</p>
-      <p>There are currently {{pending}} papers pending annotation and {{working}} papers being processed</p>
-      {% endblock %}
+
+    <p>Below shows the status of the SAPIENTA microservices. Green means the service is running, yellow means it is paused and red means it has exited</p>
+
+      <div class="list-group">
+       {% for container in containers %}
+
+       <div class="list-group-item{% if container.Status.startswith('Exited') %} list-group-item-danger{% elif container.Status.startswith('Created')%} list-group-item-warning{% else %} list-group-item-success{% endif %}">
+           <h4>{{ container.Names[0] }}</h4>
+
+           <p>Status: {{ container.Status }}</p>
+       
+       </div>
+
+       {% endfor %}
+   </div>
+
+{% endblock %}

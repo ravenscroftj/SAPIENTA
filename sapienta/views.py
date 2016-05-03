@@ -232,6 +232,8 @@ def view_status(jobid,q):
 @app.route("/status")
 def service_status():
     """Get status of the work server"""
+
+    dockerc = docker.Client(version='auto')
     
     #COORD_URI = "http://%s:%d/" % (app.config['COORD_ADDRESS'], app.config['COORD_PORT'])
 
@@ -240,7 +242,10 @@ def service_status():
     #stats = coordinator.get_stats()
 
 
-    return render_template("stats.html",**stats)
+    containers = [ x for x in dockerc.containers(all=True) if ( 'com.docker.compose.project' in x['Labels'] and x['Labels']['com.docker.compose.project'] == "docker") ]
+
+
+    return render_template("stats.html",containers=containers)
 
 @app.route("/api")
 def service_about():
