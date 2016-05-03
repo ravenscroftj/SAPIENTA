@@ -11,7 +11,6 @@ from flask.ext.socketio import SocketIO
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-
 #try and load configuration
 if( os.getenv("PARTRIDGE_CONF")):
     #try and load config from env directory

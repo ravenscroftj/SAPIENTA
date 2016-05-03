@@ -1,0 +1,22 @@
+{% extends "main.html" %}
+{%block title%}Contact Us{%endblock%}
+{%block content%}
+
+<div class="row">
+    
+    <div class="col-md-12">
+        <h1>Contact Us</h1>
+
+        <p>Problem with this service? You should check the <a href="{{ url_for('.service_status') }}">status page</a> to see if there is a known issue</a>
+
+
+        <p>You can also <a href="http://bitbucket.org/partridge/sapienta">raise a bug ticket</a> via our source code repository</p>
+
+        <p>The SAPIENTA annotation service is run by <a href="http://twitter.com/jamesravey">James Ravenscroft</a> and <a href="http://twitter.com/xrysoflhs">Maria Liakata</a> at the University of Warwick. Contact us via twitter.</p>
+
+
+    </div>
+    
+</div>
+
+{%endblock%}

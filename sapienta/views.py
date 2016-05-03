@@ -5,6 +5,7 @@ import mimetypes
 import zlib
 import pika
 import logging
+import docker
 
 from base64 import b64decode
 
@@ -232,11 +233,21 @@ def view_status(jobid,q):
 def service_status():
     """Get status of the work server"""
     
-    COORD_URI = "http://%s:%d/" % (app.config['COORD_ADDRESS'], app.config['COORD_PORT'])
+    #COORD_URI = "http://%s:%d/" % (app.config['COORD_ADDRESS'], app.config['COORD_PORT'])
 
-    coordinator = xmlrpclib.ServerProxy(COORD_URI)
+    #coordinator = xmlrpclib.ServerProxy(COORD_URI)
 
-    stats = coordinator.get_stats()
+    #stats = coordinator.get_stats()
+
 
     return render_template("stats.html",**stats)
 
+@app.route("/api")
+def service_about():
+    """API documentation page"""
+    return render_template("api.html")
+
+@app.route("/contact")
+def service_contact():
+    """Contact page"""
+    return render_template("contact.html")
