@@ -35,6 +35,7 @@ class BaseAnnotator(object):
 
 
     marginal = False
+    probsa   = False
 
     def _annotateXML(self, labels):
         """Read in the xml document and add labels to it
@@ -150,7 +151,7 @@ class LocalPythonAnnotator(BaseAnnotator):
     def annotate(self, filename, outfilename):
         """Use Python version of sapienta to annotate the paper"""
         BaseAnnotator.annotate(self, filename, outfilename)
-        labels = self.annotator.annotate(filename, self.marginal)
+        labels = self.annotator.annotate(filename, self.marginal, self.probs)
 
 
         self._annotateXML(labels)

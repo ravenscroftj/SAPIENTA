@@ -76,6 +76,7 @@ def annotate(work):
     name,ext = os.path.splitext(infile)
 
     my_anno.marginal = options.marginal
+    my_anno.probs    = options.probs
 
     bmk = {}
 
@@ -171,6 +172,8 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option("-s", "--split-sent", action="store_true", dest="split",
         help="If true, split sentences using NLTK sentence splitter")
+
+    parser.add_option("-p", "--probability", action="store_true", dest="probs", help="If set, store probability of distribution in <filename>prob.txt")
 
     parser.add_option("--marginal", dest="marginal", default=False,
             action="store_true", help="If annotating produce marginal labels in <filename>.marginal.txt")

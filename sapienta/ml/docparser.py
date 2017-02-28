@@ -245,16 +245,17 @@ class SciXML:
             para = Paragraph()
             self.currHeader.addParagraph(para)
             self.currParagraph = para
-        elif (name == 'HEADER') or (name == 'title') or (name == 'article-title'):
+        elif (name == 'HEADER') or (name == 'title') or (name == 'article-title') or (name == 'section'):
             self.inHeader = True
             header = Header()
             self.doc.addHeader(header)
             self.currHeader = header
-        elif name.lower() == 'p':
-            self.inParagraph = True
-            para = Paragraph()
-            self.currHeader.addParagraph(para)
-            self.currParagraph = para
+        elif (name.lower() == 'p') or (name.lower() == "region"):
+            if self.inHeader:
+                self.inParagraph = True
+                para = Paragraph()
+                self.currHeader.addParagraph(para)
+                self.currParagraph = para
         elif name =='s':
             if self.currParagraph == None:
                 return # skipping annotation in title
@@ -279,10 +280,10 @@ class SciXML:
             self.currSentence.incrementCitations()
             
     def endElement(self, name):
-        if (name == 'HEADER') or (name=='title'):
+        if (name == 'HEADER') or (name=='title') or (name == 'section'):
             self.inHeader = False
             
-        elif name.lower() == 'p':
+        elif name.lower() == 'p' or name.lower() == 'region':
             self.inParagraph = False
         elif name =='s':
             self.inSent = False

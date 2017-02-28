@@ -34,7 +34,7 @@ class CRFAnnotator(FeatureExtractorBase):
 
     #------------------------------------------------------------------------------------------------
 
-    def annotate(self, file, marginal=False):
+    def annotate(self, file, marginal=False, probs=False):
         """Annotate the given input file with coresc labels"""
 
         sents = self.extractFeatures(file, cache=False)
@@ -44,6 +44,11 @@ class CRFAnnotator(FeatureExtractorBase):
         self.tagger.set(items)
         
         labels = list(self.tagger.viterbi())
+
+        if probs:
+
+            with open(file + ".probs.txt", "wb") as f:
+                f.write(str(self.tagger.probability(labels)))
 
         if marginal:
 
