@@ -69,6 +69,9 @@ class BaseMQService:
 
         self.logger.info("Received message ")
 
+        #do an ack
+        ch.basic_ack(delivery_tag = method.delivery_tag)
+
         #do a thing
         try:
             properties, payload = self.run(properties, body)
@@ -90,9 +93,7 @@ class BaseMQService:
                 body = tb)
             
             return
-        
-        #do an ack
-        ch.basic_ack(delivery_tag = method.delivery_tag)
+
 
         if "exit_after" in properties.headers:
             exit_after = properties.headers["exit_after"]
