@@ -11,7 +11,8 @@ from base64 import b64decode
 
 from flask import render_template,request, redirect, url_for, Response, make_response
 from sapienta import app,socketio,mqclient
-from flask.ext.socketio import emit, join_room, leave_room
+
+from flask_socketio import emit, join_room, leave_room
 from sapienta.service.mq import BaseMQService
 
 
@@ -43,7 +44,9 @@ def submit_job(message):
         inqueue    = "sapienta.service.splitq"
     else:
         logging.info("Unrecognised format for file %s", filename)
-        sys.exit(0)
+	emit("error",{"filename" : filename, "message": "Unrecognised file format for file %s" % filename })
+        return
+
 
     if(split):
         logging.info("Splitting sentences in %s", filename)

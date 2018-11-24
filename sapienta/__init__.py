@@ -5,8 +5,7 @@ import logging
 from flask import Flask
 
 from sapienta.mqclient import MQClient
-
-from flask.ext.socketio import SocketIO
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
 socketio = SocketIO(app)
