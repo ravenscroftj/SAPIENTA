@@ -19,7 +19,7 @@ start the CandC soap server with
 from collections import Counter
 
 from suds.client import Client
-from bnc import BncFilter
+from .bnc import BncFilter
 import unicodedata
 import unittest
 import logging
@@ -31,12 +31,13 @@ import sapienta
 
 bnc = BncFilter()
 
-#figure out where the wsdl file is
-wsdlPath = 'file:' + os.path.join(os.path.dirname(__file__), "../../ccg_binding.wsdl")
+# figure out where the wsdl file is
+wsdlPath = 'file:' + \
+    os.path.join(os.path.dirname(__file__), "../../ccg_binding.wsdl")
 
 
 logger = logging.getLogger(__name__)
-    
+
 logger.setLevel(logging.INFO)
 
 
@@ -55,57 +56,52 @@ class Features:
         'class9': ['report', 'assume', 'note', 'observe', 'expect', 'consider', 'propose', 'find', 'see', 'conclude', 'know'],
         'class10': ['seem', 'accord', 'appear', 'correspond', 'lead', 'contribute']
     }
-    
+
     verbToClass = {}
     for clas, verbs in verbClassDefinition.items():
         for verb in verbs:
             verbToClass[verb] = clas
-    
+
     def __init__(self, relationTriples, tokens):
         self.relationTriples = relationTriples
         self.relationMap = self.createRelationMap(relationTriples)
         self.tokens = tokens
 
-
-        self.unigrams, self.bigrams, self.trigrams = self.createNgrams(self.tokens)
+        self.unigrams, self.bigrams, self.trigrams = self.createNgrams(
+            self.tokens)
         self.verbs, self.verbsPos = self.createVerbsVerbspos(tokens)
         self.verbClasses = self.createVerbClasses(self.verbs)
         self.passive = self.createPassiveFlag(relationTriples)
 
-    
     def createNgrams(self, tokens):
         unigrams = [token.split('|')[1] for token in tokens if token != ""]
-        unigrams = map(self.escapePunctuation, unigrams)
+        unigrams = list(map(self.escapePunctuation, unigrams))
         #unigrams = [uni for uni in unigrams if not bnc.isStopWord(uni)]
-        #TODO clean punctuation
+        # TODO clean punctuation
 
         for i in range(0, len(unigrams)):
 
-            
-            #lower case all the things
+            # lower case all the things
             unigrams[i] = unigrams[i].lower()
 
-            #filter out digits in favour of at symbols
+            # filter out digits in favour of at symbols
             chars = [x if not x.isdigit() else '@@@' for x in unigrams[i]]
             unigrams[i] = "".join(chars)
 
-
-            #shorten all floats to standard length
-            unigrams[i] = re.sub(r'\@+\.\@+',"@@@.@@@", unigrams[i])
-
+            # shorten all floats to standard length
+            unigrams[i] = re.sub(r'\@+\.\@+', "@@@.@@@", unigrams[i])
 
         bigrams = []
         for i in range(len(unigrams) - 1):
-            bigram =  (unigrams[i], unigrams[i + 1])	
+            bigram = (unigrams[i], unigrams[i + 1])
             bigrams.append(unigrams[i] + " " + unigrams[i + 1])
 
         trigrams = []
         for i in range(len(unigrams) - 2):
-            trigram =  (unigrams[i], unigrams[i + 1], unigrams[i+2])	
+            trigram = (unigrams[i], unigrams[i + 1], unigrams[i+2])
             trigrams.append(" ".join(trigram))
 
-
-        #filter out specific numbers and parenthesis in the unigrams, bigrams
+        # filter out specific numbers and parenthesis in the unigrams, bigrams
         bigrams = map(self.escapePunctuation, bigrams)
 
         return unigrams, bigrams, trigrams
@@ -116,7 +112,7 @@ class Features:
         if ngram == "":
             return ""
 
-        brackets  = "[{()}]"
+        brackets = "[{()}]"
         opposites = "]})({]"
 
         #logger.debug("Input: '%s'", ngram)
@@ -125,13 +121,13 @@ class Features:
 
         final_words = []
 
-        #iterate through each word in the ngram
+        # iterate through each word in the ngram
         for word in words:
             chars = list(word)
-            
+
             word_done = False
 
-            stack  = []
+            stack = []
 
             if (len(chars) > 1) and (chars[-1] in ";,"):
                 chars.pop(-1)
@@ -140,15 +136,13 @@ class Features:
                 if ch in brackets:
                     chars.pop(i)
 
-            #now add word to "final words" list
+            # now add word to "final words" list
             final_words.append("".join(chars))
 
         #logger.debug("output: '%s'", " ".join(final_words))
-        #end for words and return words imploded together with spaces inbetween
+        # end for words and return words imploded together with spaces inbetween
         return " ".join(final_words)
 
-
-                    
     def createRelationMap(self, relationTriples):
         relMap = {}
         for relation, middle, target in relationTriples:
@@ -156,7 +150,7 @@ class Features:
                 relMap[relation] = []
             relMap[relation].append(target)
         return relMap
-        
+
     def createVerbsVerbspos(self, tokens):
         verbs = []
         verbsPos = set()
@@ -167,22 +161,22 @@ class Features:
                 verbs.append(splits[1])
                 verbsPos.add(tag)
         return verbs, verbsPos
-    
+
     def createVerbClasses(self, verbs):
         verbClasses = []
         for verb in verbs:
             if verb in self.verbToClass:
                 verbClass = self.verbToClass[verb]
-                verbClasses.append(unicode(verbClass))
+                verbClasses.append(verbClass)
         return verbClasses
-    
+
     def createPassiveFlag(self, relationTriples):
         containsPassive = False
         for relation, middle, target in relationTriples:
             if relation == self.passiveRelation:
                 containsPassive = True
-        return containsPassive            
-    
+        return containsPassive
+
     def __str__(self):
         return '''
         relationTriples: %s
@@ -196,12 +190,13 @@ class Features:
         ''' % (self.relationTriples, self.relationMap, self.tokens,
                self.unigrams, self.bigrams,
                self.verbs, self.verbsPos, self.passive)
-    
+
     def __repr__(self):
         return str(self)
 
+
 class SoapClient:
-    
+
     def __init__(self, config=sapienta.app.config):
         self.suds = Client(wsdlPath)
         if 'SAPIENTA_CANDC_SOAP_LOCATION' in config:
@@ -209,18 +204,18 @@ class SoapClient:
         else:
             self.suds.options.location = "http://127.0.0.1:9004/"
 
-	logger.info("Using C&C instance at %s", self.suds.options.location)
-        
+        logger.info("Using C&C instance at %s", self.suds.options.location)
+
     def callSoap(self, s):
-        #TODO ascii only input? caused by soap server?
+        # TODO ascii only input? caused by soap server?
         s = self.cleanseInput(s)
-        
-        if type(s) is unicode:
-                ascii = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore')
-        else:
-                ascii = s
-                
-        result = self.suds.service.parse_string(ascii)
+
+        # if type(s) is unicode:
+        #     ascii = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore')
+        # else:
+        #     ascii = s
+
+        result = self.suds.service.parse_string(s)
         return result
 
     def cleanseInput(self, s):
@@ -233,13 +228,14 @@ class SoapClient:
         if len(s) == 1:
             return s
 
-        #separate out punctuation , ; : ? is moved a space away from the words
-        s = re.sub(r'(?<!(\s))(\,|\:|\?|\;)(?=(?:\s))', lambda m: " " + (m.group(2) or ''), s)
-        
-        #move fullstop away from last word, i.e. end of sentence. -> end of sentence .
+        # separate out punctuation , ; : ? is moved a space away from the words
+        s = re.sub(r'(?<!(\s))(\,|\:|\?|\;)(?=(?:\s))',
+                   lambda m: " " + (m.group(2) or ''), s)
+
+        # move fullstop away from last word, i.e. end of sentence. -> end of sentence .
         if (s[-1] == ".") and (s[-2] != " "):
-                s = s[:-1] + " ."
-        
+            s = s[:-1] + " ."
+
         words = s.split(" ")
 
         final_words = []
@@ -248,28 +244,26 @@ class SoapClient:
             if len(word) < 1:
                 continue
 
-            if (word[0] in "[{(") and ( len(word.split(word[0])) == 2):
+            if (word[0] in "[{(") and (len(word.split(word[0])) == 2):
 
-                #if the word is surrounded by brackets, do (word) -> ( word )
+                # if the word is surrounded by brackets, do (word) -> ( word )
                 if re.match(r'^(\[)(.+?)(\])$|^(\{)(.+?)(\})$|^(\()(.+?)(\))$', word):
-                    word = re.sub(r'^(\[|\{|\()(.+?)(\]|\}|\))$', r'\1 \2 \3', word)
-                #if word has weird brackets, separate i.e. (word}   ->  (word }
+                    word = re.sub(
+                        r'^(\[|\{|\()(.+?)(\]|\}|\))$', r'\1 \2 \3', word)
+                # if word has weird brackets, separate i.e. (word}   ->  (word }
                 elif re.match(r'^(\[|\{|\()(.+?)(\]|\}|\))$', word):
                     word = re.sub(r'^(.+?)(\]|\}|\))$', r'\1 \2', word)
 
-                #if the word has no closing bracket move opening bracket (word -> ( word
+                # if the word has no closing bracket move opening bracket (word -> ( word
                 elif len(re.split(r'\]|\}|\)', word)) == 1:
                     word = word[0] + " " + word[1:]
 
             elif word[-1] in "]})":
                 word = word[:-1] + " " + word[-1]
 
-
             final_words.append(word)
 
         return " ".join(final_words)
-
-
 
     def parseResult(self, result):
         relationTriples = []
@@ -283,7 +277,7 @@ class SoapClient:
                     if line.endswith('obj)'):
                         relation = Features.passiveRelation
                     relationTriples.append((relation, middle, target))
-        
+
         tokens = []
         for line in result.splitlines():
             if line.startswith('<c>'):
@@ -291,7 +285,7 @@ class SoapClient:
         tokens = filter(lambda x: '|' in x, tokens)
 
         return Features(relationTriples, tokens)
-    
+
     def getFeatures(self, sentence):
         result = self.callSoap(sentence)
         if not result:
@@ -302,20 +296,21 @@ class SoapClient:
 
 
 class TestCandC(unittest.TestCase):
-    
+
     def setUp(self):
         self.client = SoapClient()
 
-        
     def testCallSoap(self):
-        result = self.client.callSoap(u'Pierre thinks that Mary persuaded Bill to eat the apple.')
-        print result
+        result = self.client.callSoap(
+            u'Pierre thinks that Mary persuaded Bill to eat the apple.')
+        print(result)
         self.assertIn('(dobj persuaded_4 Bill_5)', result)
-        #self.assertIn('<c> Pierre|pierre|NNP|I-NP|I-PER|N', result)        
+        #self.assertIn('<c> Pierre|pierre|NNP|I-NP|I-PER|N', result)
         self.assertIn('<c> Pierre|pierre|NN|I-NP|O|N/N', result)
-    
+
     def testParseResult(self):
-        result = self.client.callSoap(u'Pierre thinks that Mary persuaded Bill to improve the apple.')
+        result = self.client.callSoap(
+            u'Pierre thinks that Mary persuaded Bill to improve the apple.')
         features = self.client.parseResult(result)
         self.assertIn(('dobj', 'persuaded', 'Bill'), features.relationTriples)
         self.assertIn('Bill', features.relationMap['ncsubj'])
@@ -329,12 +324,15 @@ class TestCandC(unittest.TestCase):
         self.assertIn('class7', features.verbClasses)
         #self.assertIn('VBZ', features.verbsPos)
         self.assertIn('VB', features.verbsPos)
-    
+
     def testPassive(self):
-        result = self.client.callSoap(u'The burglar was arrested by the police.')
+        result = self.client.callSoap(
+            u'The burglar was arrested by the police.')
         features = self.client.parseResult(result)
-        self.assertIn((Features.passiveRelation, 'arrested', 'burglar'), features.relationTriples)
+        self.assertIn((Features.passiveRelation, 'arrested',
+                       'burglar'), features.relationTriples)
         self.assertTrue(features.passive)
+
 
 if __name__ == '__main__':
     unittest.main()

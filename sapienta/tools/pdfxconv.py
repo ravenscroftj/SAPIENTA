@@ -60,7 +60,7 @@ def anno_e(work):
         try:
             annotate(work)
             return
-        except Exception, e:
+        except Exception as e:
             logger.error(e)
             logger.error(traceback.format_exc())
             errors += 1
@@ -131,7 +131,7 @@ def annotate(work):
         if options.benchmark:
             bmk['split_start'] = time.clock()
        
-        print "Pretty mode is ", options.pretty
+        print("Pretty mode is ", options.pretty)
         
 
         my_splitter.split(split_infile, outfile, 
@@ -237,7 +237,7 @@ def main():
         try:
             p.map(anno_e, [ (x,options) for x in args] )
         except KeyboardInterrupt:
-            print "Killing workers"
+            print("Killing workers")
             p.terminate()
             p.join()
 

@@ -13,7 +13,7 @@ commonAbbreviations = ['Fig','Figs', 'Ltd', 'St', 'al', 'ca', 'vs', 'viz', 'prot
 #from sapienta.tools.mlsplit import text_to_features
 
 def is_str(s):
-    return isinstance(s,str) or isinstance(s,unicode)
+    return isinstance(s,str) or isinstance(s,str)
 
 
 class SSSplit:
@@ -66,7 +66,7 @@ class SSSplit:
             docname = os.path.splitext(filename)[0]
 
             tree.docinfo.clear()
-            print tree.docinfo.doctype
+            print(tree.docinfo.doctype)
 
             paper = ET.Element('PAPER')
             mode2 = ET.SubElement(paper, 'mode2', 
@@ -373,5 +373,5 @@ class SSSplit:
 
 if __name__ == "__main__":
     splitter = SSSplit()
-    print splitter.split("/home/james/tmp/papers_for_type/research/journal.pbio.0040372.xml")
+    print(splitter.split("/home/james/tmp/papers_for_type/research/journal.pbio.0040372.xml"))
     

@@ -5,7 +5,7 @@ Created on 20 Jul 2015
 '''
 import os
 import re
-import cPickle
+import pickle
 import multiprocessing
 from lxml import etree as ET
 
@@ -13,11 +13,12 @@ from sapienta.tools.sssplit import referenceElements, commonAbbreviations,\
     highLevelContainerElements, pLevelContainerElements
 
 from nltk import MaxentClassifier as Classifier
+from functools import reduce
 #from nltk import NaiveBayesClassifier as Classifier
 #from nltk.classify.decisiontree import DecisionTreeClassifier as Classifier
 
 def is_str(s):
-    return isinstance(s,str) or isinstance(s,unicode)
+    return isinstance(s,str) or isinstance(s,str)
 
 
 def extract_plevel_text(filename):
@@ -161,7 +162,7 @@ if __name__ == "__main__":
         fullpaths += [ os.path.join(root, file) for file in files 
                      if file.endswith(".xml")]
 
-    print "Found %i files" % len(fullpaths)
+    print("Found %i files" % len(fullpaths))
     
     trainfiles = fullpaths[:(len(fullpaths) / 2)]
     testfiles  = fullpaths[(len(fullpaths)/2):]
@@ -174,13 +175,13 @@ if __name__ == "__main__":
     features =  reduce( lambda x,y: x+y, 
                         filefeatures)
     
-    print "Training model on %i files (%i sentences) " % (len(trainfiles), len(features) )
+    print("Training model on %i files (%i sentences) " % (len(trainfiles), len(features) ))
     classifier = Classifier.train(features)
     
     with open(CLASSIFIER_FILE, 'wb') as f:
-        cPickle.dump(classifier, f, )
+        pickle.dump(classifier, f, )
             
-    print "Testing on %i files" % len(testfiles)
+    print("Testing on %i files" % len(testfiles))
     
     toklist = []
     for file in fullpaths:
@@ -188,7 +189,7 @@ if __name__ == "__main__":
         fileid = basename[:basename.find(".")]
         filename = os.path.join(TEST_FILES_PATH, fileid + ".xml")
         for paragraph in extract_plevel_text(filename):
-            toklist += zip(paragraph, list(text_to_features(paragraph)))
+            toklist += list(zip(paragraph, list(text_to_features(paragraph))))
         
     position = 1
     accumulator = []
@@ -205,10 +206,10 @@ if __name__ == "__main__":
 
         if classifier.classify(feature):
             position = 1
-            print "<s>" + " ".join(accumulator) + "</s>"
+            print("<s>" + " ".join(accumulator) + "</s>")
             accumulator = []
 
-    print classifier.show_most_informative_features()
+    print(classifier.show_most_informative_features())
     
     #print len(features)
             

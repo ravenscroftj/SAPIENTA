@@ -5,16 +5,13 @@ Take a known, split paper and annotate it using Sapienta remotely
 '''
 import sys
 import os
-import pycurl
 import codecs
 import subprocess
 import tempfile
 import logging
 
-from urllib import urlencode
-from progressbar import ProgressBar
+from urllib.parse import urlencode
 from xml.dom import minidom
-from curlutil import CURLUploader
 from sapienta import app
 
 config = app.config
@@ -48,7 +45,7 @@ class BaseAnnotator(object):
 
             sid = s.getAttribute("sid")
 
-            if labels.has_key(sid):
+            if sid in labels:
 
                 label = labels[sid]
 
@@ -213,47 +210,47 @@ class LocalPerlAnnotator(BaseAnnotator):
                 
 
 
-#------------------------------------------------------------------            
+# #------------------------------------------------------------------            
 
-SAPIENTA_URL="http://www.ebi.ac.uk/Rebholz-srv/sapienta/CoreSCWeb/submitRPC"
+# SAPIENTA_URL="http://www.ebi.ac.uk/Rebholz-srv/sapienta/CoreSCWeb/submitRPC"
 
-class RemoteAnnotator(BaseAnnotator, CURLUploader):
-    """Class that submits a remote annotation job to sapienta servers and saves
-    results
-    """
+# class RemoteAnnotator(BaseAnnotator, CURLUploader):
+#     """Class that submits a remote annotation job to sapienta servers and saves
+#     results
+#     """
 
-    def __init__(self):
-        """"""
+#     def __init__(self):
+#         """"""
 
-    def annotate(self, infile, outfile):
-        """Do the actual annotation work"""
+#     def annotate(self, infile, outfile):
+#         """Do the actual annotation work"""
 
-        BaseAnnotator.annotate(self, infile, outfile)
+#         BaseAnnotator.annotate(self, infile, outfile)
 
-        #parse doc to see if annotations already present
-        if len(self.doc.getElementsByTagName("CoreSc1")) < 1:
+#         #parse doc to see if annotations already present
+#         if len(self.doc.getElementsByTagName("CoreSc1")) < 1:
 
-            pdata = [('paper', (pycurl.FORM_FILE, infile) )]
+#             pdata = [('paper', (pycurl.FORM_FILE, infile) )]
 
-            c = pycurl.Curl()
-            c.setopt(pycurl.URL, SAPIENTA_URL)
-            c.setopt(pycurl.POST,1)
-            c.setopt(pycurl.HTTPPOST, pdata)
+#             c = pycurl.Curl()
+#             c.setopt(pycurl.URL, SAPIENTA_URL)
+#             c.setopt(pycurl.POST,1)
+#             c.setopt(pycurl.HTTPPOST, pdata)
 
-            logging.info("Uploading %s to annotation server", infile)
+#             logging.info("Uploading %s to annotation server", infile)
 
-            self.perform(c)
-            try:
-                tmpnam, sents = self.result.split(":")
-            except Exception as e:
-                raise SapientaException("Empty response from SAPIENTA")
+#             self.perform(c)
+#             try:
+#                 tmpnam, sents = self.result.split(":")
+#             except Exception as e:
+#                 raise SapientaException("Empty response from SAPIENTA")
 
-            labels = sents.split(">")
+#             labels = sents.split(">")
 
-            self._annotateXML( labels )
+#             self._annotateXML( labels )
 
-        with codecs.open(outfile,'w', encoding='utf-8') as f:
-            self.doc.writexml(f)
+#         with codecs.open(outfile,'w', encoding='utf-8') as f:
+#             self.doc.writexml(f)
 
 
 
@@ -262,7 +259,7 @@ class RemoteAnnotator(BaseAnnotator, CURLUploader):
 
 #Set annotator to remote annotator for now
 
-if config.has_key('SAPIENTA_ANNOTATE_METHOD'):
+if 'SAPIENTA_ANNOTATE_METHOD' in config:
     
     if config['SAPIENTA_ANNOTATE_METHOD'] == 'PERL':
         Annotator = LocalPerlAnnotator
