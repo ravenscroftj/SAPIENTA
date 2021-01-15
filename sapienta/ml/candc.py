@@ -215,7 +215,7 @@ class SoapClient:
         # else:
         #     ascii = s
 
-        result = self.suds.service.parse_string(s)
+        result = self.suds.service.parse_string(s, False)
         return result
 
     def cleanseInput(self, s):

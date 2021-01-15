@@ -23,8 +23,9 @@ class AttributeGenerator:
 
     @staticmethod
     def createUnicodeAttribute(uni):
-        ascii = unicodedata.normalize('NFKD', uni).encode('ascii', 'ignore')
-        return crfsuite.Attribute(ascii)
+        #ascii = unicodedata.normalize('NFKD', uni).encode('ascii', 'ignore')
+        return crfsuite.Attribute(uni)
+        #return crfsuite.Attribute(ascii)
 
     @staticmethod
     def yieldCandcAttributes(featuresAllowed, candcFeatures, ngramFilter=lambda x, y: True):
