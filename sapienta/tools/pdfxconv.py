@@ -18,6 +18,7 @@ from optparse import OptionParser
 from sapienta.tools.converter import PDFXConverter
 from sapienta.tools.annotate import Annotator
 
+from dotenv import load_dotenv
 
 #from sapienta.tools.split import SentenceSplitter as Splitter
 from sapienta.tools.sssplit import SSSplit as Splitter
@@ -47,7 +48,7 @@ def init_worker(q, rq=None):
     my_splitter = Splitter()
 
     logger.info("Initialising annotator %d", i)
-    my_anno = Annotator(config=config, logger=logger)
+    my_anno = Annotator(logger=logger)
 
     logger.info("Using C&C server %s", config['SAPIENTA_CANDC_SOAP_LOCATION'])
 
@@ -166,6 +167,8 @@ def annotate(work):
 
 
 def main():
+
+    load_dotenv()
     
     usage = "usage: %prog [options] file1.pdf [file2.pdf] "
     
@@ -222,7 +225,7 @@ def main():
         q = Queue()
         rq = Queue()
         for i in range(0, options.cpus):
-            myconf = dict(**sapienta.app.config)
+            myconf = {}
 
             if i < len(candc_hosts):
                 myconf['SAPIENTA_CANDC_SOAP_LOCATION'] = candc_hosts[i]

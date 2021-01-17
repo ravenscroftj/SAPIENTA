@@ -93,7 +93,6 @@ class Features:
 
         bigrams = []
         for i in range(len(unigrams) - 1):
-            bigram = (unigrams[i], unigrams[i + 1])
             bigrams.append(unigrams[i] + " " + unigrams[i + 1])
 
         trigrams = []
@@ -113,7 +112,6 @@ class Features:
             return ""
 
         brackets = "[{()}]"
-        opposites = "]})({]"
 
         #logger.debug("Input: '%s'", ngram)
 
@@ -124,10 +122,6 @@ class Features:
         # iterate through each word in the ngram
         for word in words:
             chars = list(word)
-
-            word_done = False
-
-            stack = []
 
             if (len(chars) > 1) and (chars[-1] in ";,"):
                 chars.pop(-1)
@@ -145,7 +139,7 @@ class Features:
 
     def createRelationMap(self, relationTriples):
         relMap = {}
-        for relation, middle, target in relationTriples:
+        for relation, _, target in relationTriples:
             if not relation in relMap:
                 relMap[relation] = []
             relMap[relation].append(target)
@@ -172,7 +166,7 @@ class Features:
 
     def createPassiveFlag(self, relationTriples):
         containsPassive = False
-        for relation, middle, target in relationTriples:
+        for relation, _, _ in relationTriples:
             if relation == self.passiveRelation:
                 containsPassive = True
         return containsPassive
@@ -197,10 +191,10 @@ class Features:
 
 class SoapClient:
 
-    def __init__(self, config=sapienta.app.config):
+    def __init__(self):
         self.suds = Client(wsdlPath)
-        if 'SAPIENTA_CANDC_SOAP_LOCATION' in config:
-            self.suds.options.location = config['SAPIENTA_CANDC_SOAP_LOCATION']
+        if 'SAPIENTA_CANDC_SOAP_LOCATION' in os.environ:
+            self.suds.options.location = os.environ['SAPIENTA_CANDC_SOAP_LOCATION']
         else:
             self.suds.options.location = "http://127.0.0.1:9004/"
 

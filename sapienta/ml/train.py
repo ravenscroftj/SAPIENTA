@@ -27,6 +27,7 @@ class FeatureExtractorBase:
         self.cacheDir = cacheDir
         self.features = features
         self.config = config
+        self.ngrams = None
 
         if logger == None:
             self.logger = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ class FeatureExtractorBase:
 
             parser = SciXML()
             doc = parser.parse(file)
-            candcClient = SoapClient(self.config)
+            candcClient = SoapClient()
             processedSentences = []
 
 

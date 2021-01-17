@@ -9,12 +9,12 @@ import codecs
 import subprocess
 import tempfile
 import logging
+import dotenv
+
+dotenv.load_dotenv()
 
 from urllib.parse import urlencode
 from xml.dom import minidom
-from sapienta import app
-
-config = app.config
 
 try:
     from collections import Counter
@@ -131,19 +131,19 @@ class BaseAnnotator(object):
 #MODEL_PATH = str(os.path.join(config['MODELS_DIR'], "a.model"))
 class LocalPythonAnnotator(BaseAnnotator):
 
-    def __init__(self,config=config,logger=None):
+    def __init__(self, logger=None):
         from sapienta.ml.annotate import CRFAnnotator
         from tempfile import mkdtemp
 
         self.probs = False
         cacheDir = mkdtemp()
-        modelFile = config['SAPIENTA_MODEL_FILE']
-        ngramsFile = config['SAPIENTA_NGRAMS_FILE']
+        modelFile = os.environ['SAPIENTA_MODEL_FILE']
+        ngramsFile = os.environ['SAPIENTA_NGRAMS_FILE']
 
         features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
 
 
-        self.annotator = CRFAnnotator(modelFile, ngramsFile, cacheDir, features, config, logger)
+        self.annotator = CRFAnnotator(modelFile, ngramsFile, cacheDir, features, logger=logger)
 
     #------------------------------------------------------------------------- 
     def annotate(self, filename, outfilename):
@@ -165,8 +165,8 @@ class LocalPerlAnnotator(BaseAnnotator):
 
     def __init__(self):
 
-        self.perldir = config['SAPIENTA_PERL_DIR']
-        self.resultdir = config['SAPIENTA_RESULT_DIR']
+        self.perldir = os.environ['SAPIENTA_PERL_DIR']
+        self.resultdir = os.environ['SAPIENTA_RESULT_DIR']
 
 
     def annotate(self,infile,outfile):
@@ -260,9 +260,9 @@ class LocalPerlAnnotator(BaseAnnotator):
 
 #Set annotator to remote annotator for now
 
-if 'SAPIENTA_ANNOTATE_METHOD' in config:
+if 'SAPIENTA_ANNOTATE_METHOD' in os.environ:
     
-    if config['SAPIENTA_ANNOTATE_METHOD'] == 'PERL':
+    if os.environ['SAPIENTA_ANNOTATE_METHOD'] == 'PERL':
         Annotator = LocalPerlAnnotator
     else:
     #elif config['SAPIENTA_ANNOTATE_METHOD'] == 'PYTHON':
