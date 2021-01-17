@@ -135,6 +135,7 @@ class LocalPythonAnnotator(BaseAnnotator):
         from sapienta.ml.annotate import CRFAnnotator
         from tempfile import mkdtemp
 
+        self.probs = False
         cacheDir = mkdtemp()
         modelFile = config['SAPIENTA_MODEL_FILE']
         ngramsFile = config['SAPIENTA_NGRAMS_FILE']

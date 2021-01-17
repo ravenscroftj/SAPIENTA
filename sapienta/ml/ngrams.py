@@ -40,8 +40,8 @@ class NgramBuilder:
 
         self.logger.info("Running local maximum algorithm for ngrams")
         #run local maximums to get extraction information
-        for lst in [self.unigrams, self.bigrams]:
-            map(self.local_max_aber, lst.keys())
+        for ngram in list(self.unigrams.keys()) + list(self.bigrams.keys()):
+            self.local_max_aber(ngram)
 
 
         self.logger.info("Extracting useful ngrams")

@@ -217,7 +217,6 @@ class SoapClient:
         #     ascii = s
 
         s = s.encode("ascii","replace").decode()
-        print(s)
         result = self.suds.service.parse_string(s, False)
         return result
 

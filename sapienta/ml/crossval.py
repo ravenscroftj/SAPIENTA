@@ -169,7 +169,7 @@ class CrossValidationTrainer:
         
         #run the training
         p = Pool()
-        results = map(train_and_test, fixtures)
+        results = p.map(train_and_test, fixtures)
         #results = map(train_and_test, fixtures)
 
         #calculate and show results for folds
@@ -193,7 +193,7 @@ class CrossValidationTrainer:
         print (labels)
 
         f = open(os.path.join(self.corpusDir, "results_fold_%d.csv" %
-        fold),'wb')
+        fold),'w')
 
         csvw = csv.writer(f)
 
