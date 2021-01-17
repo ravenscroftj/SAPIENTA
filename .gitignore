@@ -7,6 +7,6 @@ dist/
 bin/
 __pycache__
 *.egg-info
-crfsuite
 candc-1.00
 CoreSC_corpus
+miniodata/
