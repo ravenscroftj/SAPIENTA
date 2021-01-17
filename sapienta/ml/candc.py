@@ -210,11 +210,14 @@ class SoapClient:
         # TODO ascii only input? caused by soap server?
         s = self.cleanseInput(s)
 
+        #s = unicodedata.normalize('NFKD', s)
         # if type(s) is unicode:
         #     ascii = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore')
         # else:
         #     ascii = s
 
+        s = s.encode("ascii","replace").decode()
+        print(s)
         result = self.suds.service.parse_string(s, False)
         return result
 

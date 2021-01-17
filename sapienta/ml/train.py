@@ -5,7 +5,7 @@ from __future__ import division
 
 import os
 import logging
-import pickle
+import cloudpickle as pickle
 import crfsuite
 
 from sapienta.ml.crf import AttributeGenerator, Trainer
