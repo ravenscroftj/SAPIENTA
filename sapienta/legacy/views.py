@@ -42,7 +42,9 @@ def submit_job(message):
         inqueue    = "sapienta.service.splitq"
     else:
         logging.info("Unrecognised format for file %s", filename)
-        sys.exit(0)
+	emit("error",{"filename" : filename, "message": "Unrecognised file format for file %s" % filename })
+        return
+
 
     if(split):
         logging.info("Splitting sentences in %s", filename)
