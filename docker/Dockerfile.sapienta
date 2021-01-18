@@ -1,6 +1,6 @@
 FROM continuumio/miniconda3:latest
 
-RUN apt-get update -y && apt-get install build-essential automake autoconf -y
+RUN apt-get update -y && apt-get install build-essential automake autoconf libtool -y
 
 ADD liblbfgs /build/liblbfgs
 
