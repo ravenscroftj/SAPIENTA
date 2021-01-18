@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name = "SAPIENTA",
     version = 0.1,
-    packages = find_packages(),
+    packages = find_packages(exclude=('*.test')),
 
     #install requirements
     install_requires = [],
