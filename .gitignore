@@ -10,3 +10,7 @@ __pycache__
 candc-1.00
 CoreSC_corpus
 miniodata/
+.env
+all_papers.model
+ngrams.pickle
+written.num.o5
