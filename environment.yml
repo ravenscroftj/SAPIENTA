@@ -43,7 +43,6 @@ dependencies:
     - bidict==0.21.2
     - chardet==4.0.0
     - cloudpickle==1.6.0
-    - crfsuite==0.12
     - dataclasses==0.8
     - fastapi==0.63.0
     - flask-socketio==5.0.1
