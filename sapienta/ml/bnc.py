@@ -5,15 +5,13 @@ read BNC word frequency provided by http://www.kilgarriff.co.uk/bnc-readme.html
 
 @author: grabmuel
 '''
+import os
 
-from sapienta import app
-
-config = app.config
 
 class BncFilter:
     
     maxlines = 100
-    bncFreqPath = config['SAPIENTA_STOPWORDS_LIST'] 
+    bncFreqPath = os.environ['SAPIENTA_STOPWORDS_LIST'] 
     def __init__(self):
         self.stopwords = set()
         f = open(BncFilter.bncFreqPath)

@@ -302,7 +302,7 @@ class SciXML:
         parser.StartElementHandler = self.startElement
         parser.EndElementHandler = self.endElement
         parser.CharacterDataHandler = self.charData
-        parser.ParseFile(open(path))
+        parser.ParseFile(open(path,'rb'))
         return self.doc
 
 class TestSciXML(unittest.TestCase):

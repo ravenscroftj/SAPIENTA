@@ -4,7 +4,6 @@ Utility functions for working with ngrams within sapienta
 from __future__ import division
 from sapienta.ml.bnc import BncFilter
 
-import avl
 import logging
 
 try:
@@ -41,8 +40,8 @@ class NgramBuilder:
 
         self.logger.info("Running local maximum algorithm for ngrams")
         #run local maximums to get extraction information
-        for lst in [self.unigrams, self.bigrams]:
-            map(self.local_max_aber, lst.keys())
+        for ngram in list(self.unigrams.keys()) + list(self.bigrams.keys()):
+            self.local_max_aber(ngram)
 
 
         self.logger.info("Extracting useful ngrams")
@@ -54,10 +53,10 @@ class NgramBuilder:
             self.bigrams[b]['idf'] = (self.doccount / 
                     self.bigrams[b]['doc_frequency'])
 
-        unigrams = avl.new( [k for k in self.unigrams 
+        unigrams = set( [k for k in self.unigrams 
                 if self.unigrams[k]['total_frequency'] > 3] )
 
-        bigrams  = avl.new( [k for k in self.bigrams
+        bigrams  = set( [k for k in self.bigrams
             if (self.bigrams[k]['res'] and (self.getGlue(k) > 5.6e-11))])
 
         return unigrams, bigrams
@@ -117,13 +116,13 @@ class NgramBuilder:
             self.antecedents[ngram] = []
         elif order == 2:
 
-           if self.antecedents.has_key(ngram):
+           if ngram in self.antecedents:
                 self.antecedents[ngram] |= words
            else:
                 self.antecedents[ngram] = set(words)
 
            for w in words:           
-                if self.successors.has_key(w):
+                if  w in self.successors:
                     self.successors[w].add(ngram)
                 else:
                     self.successors[w] = set([ngram])
@@ -131,13 +130,13 @@ class NgramBuilder:
         elif order == 3:
             nngram = [ " ".join((words[0],words[1])), " ".join((words[1],words[2]))]
 
-            if self.antecedents.has_key(ngram):
+            if ngram in self.antecedents:
                 self.antecedents[ngram] |= nngram
             else:
                 self.antecedents[ngram] = set(nngram)
 
             for w in nngram:
-                if self.successors.has_key(w):
+                if w in self.successors:
                     self.successors[w].add(ngram)
                 else:
                     self.successors[w] = set([ngram])
@@ -161,12 +160,12 @@ class NgramBuilder:
 
                 glue1  = self.unigrams[words[0]]['total_frequency'] / self.totalUnis
                 if glue1 == 0:
-                    glue1 = 1 / totalUnis
+                    glue1 = 1 / self.totalUnis
 
                 glue2  = self.unigrams[words[1]]['total_frequency'] / self.totalUnis
 
                 if glue2 == 0:
-                    glue2 = 1 / totalUnis
+                    glue2 = 1 / self.totalUnis
 
                 glue = glue12 * glue12 / glue1 * glue2
 
@@ -176,11 +175,6 @@ class NgramBuilder:
                 bi01 = " ".join(words[:2])
                 bi02 = " ".join(words[1:])
 
-                b1 = self.bigrams[bi01]
-
-
-
-                u1 = self.unigrams[words[2]]
 
                 glue01 = (self.bigrams[bi01]['total_frequency'] * 
                             self.unigrams[words[2]]['total_frequency'] 
@@ -220,9 +214,6 @@ class NgramBuilder:
         """Algorithm for finding the relevance of an ngram an ML model
         """
 
-        antsum = 0
-        sucsum = 0
-
         words = ngram.split(" ")
         order = len(words)
 
@@ -236,7 +227,7 @@ class NgramBuilder:
 
             succsum = 0
             
-            if self.successors.has_key(ngram):
+            if ngram in self.successors:
                 for s in self.successors[ngram]:
                     thisglue = self.getGlue(s)
                     self.logger.debug("glue of successor %s is %e", s, thisglue)
@@ -246,7 +237,7 @@ class NgramBuilder:
             glue = self.getGlue(ngram)
             self.logger.debug("glue of %s is %e", ngram, glue)
 
-            if self.successors.has_key(ngram) and (len(self.successors[ngram]) > 0):
+            if (ngram in self.successors) and (len(self.successors[ngram]) > 0):
                     glueS = glue * len(self.successors[ngram])
             else:
                 glueS = glue

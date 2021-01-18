@@ -3,7 +3,7 @@ Module for splitting sentences on articles that need splitting
 '''
 import codecs
 import logging
-import cPickle
+import pickle
 import os
 import sys
 import locale

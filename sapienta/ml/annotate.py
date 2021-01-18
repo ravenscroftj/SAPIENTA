@@ -1,8 +1,7 @@
-import avl
 import os
 import csv
 import logging
-import cPickle
+import pickle
 import crfsuite
 
 from sapienta.ml.train import FeatureExtractorBase
@@ -20,9 +19,9 @@ class CRFAnnotator(FeatureExtractorBase):
         self.logger.info("Loading cached ngrams from %s", self.ngramCacheFile)
 
         with open(self.ngramCacheFile, 'rb') as f:
-                self.ngrams = cPickle.load(f)
-                self.ngrams['unigram'] = avl.new(self.ngrams['unigram'])
-                self.ngrams['bigram']  = avl.new(self.ngrams['bigram'])
+                self.ngrams = pickle.load(f)
+                self.ngrams['unigram'] = set(self.ngrams['unigram'])
+                self.ngrams['bigram']  = set(self.ngrams['bigram'])
 
         self.logger.info("Ngram filter has %d bigrams and %d unigrams", 
                 len(self.ngrams['bigram']), len(self.ngrams['unigram']))
@@ -90,7 +89,7 @@ def main():
 
     args = a.parse_args()
 
-    print args
+    print (args)
 
     features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
 
@@ -101,7 +100,7 @@ def main():
 
     anno.annotate(args.paperFile)
 
-    print args.paperFile,":",">".join(anno.annotate(args.paperFile))
+    print (args.paperFile,":",">".join(anno.annotate(args.paperFile)))
 
 if __name__ == "__main__":
     

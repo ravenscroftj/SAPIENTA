@@ -1,9 +1,6 @@
 FROM base/archlinux:latest
 
 
-MAINTAINER James Ravenscroft <ravenscroft@papro.org.uk>
-
-
 ######################## Prime operating system ####################################
 
 #make sure pacman keys are up to date

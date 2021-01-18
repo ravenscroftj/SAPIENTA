@@ -59,7 +59,7 @@ def chunkify(fmap, n):
 
     chunks = [ [] for i in range(n)]
 
-    fvals = sorted( [ (k, len(item)) for k,item in fmap.items() ], key=lambda x: x[1], reverse=True)
+    fvals = sorted( [ (k, len(item)) for k,item in list(fmap.items()) ], key=lambda x: x[1], reverse=True)
 
     for k, l in fvals:
 
@@ -149,7 +149,7 @@ def check_results():
                         results.append( (None, coresc.get("type"), None) )
 
 
-    print "Total CoreSC tags: %d" % len(results)
+    print("Total CoreSC tags: %d" % len(results))
 
     tot = 0
 
@@ -157,7 +157,7 @@ def check_results():
 
         tot += len([ x for (x,y,z) in results if z == i and x==y ])
 
-        print "Correct @ %d: %d" % (i+1, tot)
+        print("Correct @ %d: %d" % (i+1, tot))
 
     labels = sorted(set([ y for x,y,z in results]))
 
@@ -169,7 +169,7 @@ def check_results():
     for x,y in product(labels,repeat=2):
 
         if x != lastx:
-            print line
+            print(line)
             line = ""
             line += x
 
@@ -177,7 +177,7 @@ def check_results():
 
         lastx = x
 
-    print line
+    print(line)
 
 if __name__ == "__main__":
 

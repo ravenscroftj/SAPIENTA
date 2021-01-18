@@ -3,18 +3,10 @@ from setuptools import setup, find_packages
 setup(
     name = "SAPIENTA",
     version = 0.1,
-    packages = find_packages(),
+    packages = find_packages(exclude=('*.test')),
 
     #install requirements
-    install_requires = ['Flask>=0.9',
-            'pycurl>=7.19.0',
-            'progressbar>=2.3',
-            #'text-sentence>=0.14',
-            'docker-py>=1.8.1',
-            'lxml>=3.4.4',
-            'pyavl>=1.12',
-            'suds>=0.4',
-            'Flask-SocketIO>=1.2'],
+    install_requires = [],
 
     entry_points = {"console_scripts" : [
         'pdfxconv = sapienta.tools.pdfxconv:main',

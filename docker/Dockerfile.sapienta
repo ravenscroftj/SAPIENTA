@@ -1,0 +1,33 @@
+FROM continuumio/miniconda3:latest
+
+RUN apt-get update -y && apt-get install build-essential automake autoconf -y
+
+ADD liblbfgs /build/liblbfgs
+
+RUN cd /build/liblbfgs && ./autogen.sh && ./configure && make && make install
+
+ADD crfsuite /build/crfsuite
+
+RUN cd /build/crfsuite && ./autogen.sh && ./configure && make && make install
+
+WORKDIR /app
+
+ADD environment.yml /app/environment.yml
+RUN conda env update -n base -f environment.yml
+
+RUN cp /build/crfsuite/swig/crfsuite.cpp /build/crfsuite/swig/python && cd  /build/crfsuite/swig/python  && python setup.py install
+
+ADD ./sapienta /app/sapienta
+ADD ./setup.py /app/setup.py
+ADD ./ccg_binding.wsdl /app/ccg_binding.wsdl
+
+RUN python setup.py develop
+
+ADD https://www.dropbox.com/s/6u5yd6nh0j45yfg/written.num.o5?dl=1   /models/written.num.o5
+ADD https://papro.org.uk/downloads/sapienta/models/18-01-2021/all_papers.model /models/all_papers.model
+ADD https://papro.org.uk/downloads/sapienta/models/18-01-2021/ngrams.pickle /models/ngrams.pickle
+
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+ENV SAPIENTA_STOPWORDS_LIST=/models/written.num.o5
+ENV SAPIENTA_MODEL_FILE=/models/all_papers.model
+ENV SAPIENTA_NGRAMS_FILE=/models/ngrams.pickle

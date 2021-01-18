@@ -1,4 +1,3 @@
-import xmlrpclib
 import os
 import uuid
 import mimetypes
@@ -11,7 +10,6 @@ from base64 import b64decode
 
 from flask import render_template,request, redirect, url_for, Response, make_response
 from sapienta import app,socketio,mqclient
-
 from flask_socketio import emit, join_room, leave_room
 from sapienta.service.mq import BaseMQService
 
@@ -30,7 +28,7 @@ def submit_job(message):
     exit_after = inqueue
     filename = message['filename']
 
-    name,ext = os.path.splitext(filename)
+    _,ext = os.path.splitext(filename)
 
     split    = "split" in message and message['split']
     annotate = "annotate" in message and message['annotate'] 

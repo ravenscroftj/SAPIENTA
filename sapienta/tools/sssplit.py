@@ -13,7 +13,7 @@ commonAbbreviations = ['Fig','Figs', 'Ltd', 'St', 'al', 'ca', 'vs', 'viz', 'prot
 #from sapienta.tools.mlsplit import text_to_features
 
 def is_str(s):
-    return isinstance(s,str) or isinstance(s,unicode)
+    return isinstance(s,str) or isinstance(s,str)
 
 
 class SSSplit:
@@ -66,7 +66,7 @@ class SSSplit:
             docname = os.path.splitext(filename)[0]
 
             tree.docinfo.clear()
-            print tree.docinfo.doctype
+            print(tree.docinfo.doctype)
 
             paper = ET.Element('PAPER')
             mode2 = ET.SubElement(paper, 'mode2', 
@@ -225,7 +225,7 @@ class SSSplit:
         #if(re.match("^[\(\[]?[A-Z]", txt) and len(self.newSentence) > 0):
         #    self.endCurrentSentence()
         
-        pattern = re.compile('(\.|\?|\!)(?=\s*[\[\(A-Z0-9$])|\.$')
+        pattern = re.compile(r'(\.|\?|\!)(?=\s*[\[\(A-Z0-9$])|\.$')
 
         m = pattern.search(txt)
         last = 0
@@ -238,7 +238,7 @@ class SSSplit:
             endOfSent = True
 
             #get last word before full stop (if not full stop we don't care)
-            lastmatch = re.search("[\(\[]?(\S+)\.$", txt[last:m.end()])
+            lastmatch = re.search(r"[\(\[]?(\S+)\.$", txt[last:m.end()])
             
             if lastmatch != None:
                 lastword = lastmatch.group(1)
@@ -252,7 +252,7 @@ class SSSplit:
                 
             #if the last word is a single letter then it is usually an initial
             
-            if lastword != None and re.match("^[\(\[]?[A-Z]$", lastword): 
+            if lastword != None and re.match(r"^[\(\[]?[A-Z]$", lastword): 
                 
                 sent = txt[last:m.end()]
                 
@@ -272,11 +272,11 @@ class SSSplit:
             #if the dot matches the end of a common abbreviation, skip end of sentence
 
             #if we match digits around a dot then its probably a number so skip
-            if re.match("[0-9]?\.[0-9]", txt[m.start()-1:m.end()+1]):
+            if re.match(r"[0-9]?\.[0-9]", txt[m.start()-1:m.end()+1]):
                 endOfSent = False
                 
             #if we match lower case letters it could be an abbreviation like e.g. or i.e.
-            if re.match("[a-z]\.[a-z]", txt[m.start()-1:m.end()+1]):
+            if re.match(r"[a-z]\.[a-z]", txt[m.start()-1:m.end()+1]):
                 endOfSent = False
 
 
@@ -373,5 +373,5 @@ class SSSplit:
 
 if __name__ == "__main__":
     splitter = SSSplit()
-    print splitter.split("/home/james/tmp/papers_for_type/research/journal.pbio.0040372.xml")
+    print(splitter.split("/home/james/tmp/papers_for_type/research/journal.pbio.0040372.xml"))
     

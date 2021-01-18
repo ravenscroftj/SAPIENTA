@@ -3,10 +3,9 @@
 
 from __future__ import division
 
-import avl
 import os
 import logging
-import cPickle
+import cloudpickle as pickle
 import crfsuite
 
 from sapienta.ml.crf import AttributeGenerator, Trainer
@@ -28,6 +27,7 @@ class FeatureExtractorBase:
         self.cacheDir = cacheDir
         self.features = features
         self.config = config
+        self.ngrams = None
 
         if logger == None:
             self.logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class FeatureExtractorBase:
             self.logger.info("Loading features from %s", cachedName)
             with self.lock:
                 with open(cachedName, 'rb') as f:
-                    features = cPickle.load(f)
+                    features = pickle.load(f)
                 return features
 
         else:
@@ -66,7 +66,7 @@ class FeatureExtractorBase:
 
             parser = SciXML()
             doc = parser.parse(file)
-            candcClient = SoapClient(self.config)
+            candcClient = SoapClient()
             processedSentences = []
 
 
@@ -80,7 +80,7 @@ class FeatureExtractorBase:
 
                 with self.lock:
                     with open(cachedName, 'wb') as f:
-                        cPickle.dump(processedSentences, f, -1)
+                        pickle.dump(processedSentences, f, -1)
 
             return processedSentences
 
@@ -143,9 +143,9 @@ class SAPIENTATrainer(FeatureExtractorBase):
         if os.path.exists(self.ngramCacheFile):
             self.logger.info("Loading cached ngrams from file...")
             with open(self.ngramCacheFile, 'rb') as f:
-                self.ngrams = cPickle.load(f)
-                self.ngrams['unigram'] = avl.new(self.ngrams['unigram'])
-                self.ngrams['bigram']  = avl.new(self.ngrams['bigram'])
+                self.ngrams = pickle.load(f)
+                self.ngrams['unigram'] = set(self.ngrams['unigram'])
+                self.ngrams['bigram']  = set(self.ngrams['bigram'])
         else:
 
             self.logger.info("Beginning feature extraction")
@@ -171,7 +171,7 @@ class SAPIENTATrainer(FeatureExtractorBase):
 
 
             with open(self.ngramCacheFile, 'wb') as f:
-                cPickle.dump({"unigram" : list(unigrams), "bigram" : list(bigrams) },f)
+                pickle.dump({"unigram" : list(unigrams), "bigram" : list(bigrams) },f)
 
 
     #------------------------------------------------------------------------------------------------
@@ -197,7 +197,7 @@ class SAPIENTATrainer(FeatureExtractorBase):
             self.logger.info("Loading features from %s", cachedName)
             with self.lock:
                 with open(cachedName, 'rb') as f:
-                    features = cPickle.load(f)
+                    features = pickle.load(f)
                 return features
 
         else:
@@ -218,7 +218,7 @@ class SAPIENTATrainer(FeatureExtractorBase):
 
             with self.lock:
                 with open(cachedName, 'wb') as f:
-                    cPickle.dump(processedSentences, f, -1)
+                    pickle.dump(processedSentences, f, -1)
 
             return processedSentences
 
@@ -269,14 +269,13 @@ class CRFTrainer(SAPIENTATrainer):
         self.logger.info("Loading cached ngrams from %s", self.ngramCacheFile)
 
         with open(self.ngramCacheFile, 'rb') as f:
-                self.ngrams = cPickle.load(f)
-                self.ngrams['unigram'] = avl.new(self.ngrams['unigram'])
-                self.ngrams['bigram']  = avl.new(self.ngrams['bigram'])
+                self.ngrams = pickle.load(f)
+                self.ngrams['unigram'] = set(self.ngrams['unigram'])
+                self.ngrams['bigram']  = set(self.ngrams['bigram'])
 
         self.logger.info("Ngram filter has %d bigrams and %d unigrams", 
                 len(self.ngrams['bigram']), len(self.ngrams['unigram']))
 
-        ngramFilter = lambda l, n: n in ngrams[l]
         
         for doc in testFiles:
             features = self.extractFeatures(doc)

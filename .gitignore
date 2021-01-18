@@ -1,6 +1,16 @@
 *.pyc
+*.bak
 *.sw[p|o]
 env/
 build/
 dist/
 bin/
+__pycache__
+*.egg-info
+candc-1.00
+CoreSC_corpus
+miniodata/
+.env
+all_papers.model
+ngrams.pickle
+written.num.o5

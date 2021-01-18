@@ -1,22 +1,20 @@
 from __future__ import division
 
 import sys
-import avl
 import logging
 import os
 import crfsuite
-import cPickle
+import pickle
 import csv
 
 from multiprocessing import Pool, Lock
 
 #from sapienta.ml.svmlight import SVMLightTrainer as Trainer
 from sapienta.ml.train import CRFTrainer as Trainer
+from sapienta.ml.folds import get_folds
+from collections import Counter
 
-try:
-    from collections import Counter
-except:
-    from sapienta.ml.counter import Counter
+
 
 def train_and_test(fixture):
     """This method creates a trainer and trains and evaluates a crf model
@@ -74,7 +72,7 @@ class CrossValidationTrainer:
     def train_cross_folds( self, modelType, corpusDir, features, foldsFile=None, loo=False ):
         """Train SAPIENTA on folds described in foldTable."""
 
-        from sapienta.ml.folds import get_folds
+        
         
         self.modelType = modelType
 
@@ -192,10 +190,10 @@ class CrossValidationTrainer:
         fp = {}
         fn = {}
 
-        print labels
+        print (labels)
 
         f = open(os.path.join(self.corpusDir, "results_fold_%d.csv" %
-        fold),'wb')
+        fold),'w')
 
         csvw = csv.writer(f)
 

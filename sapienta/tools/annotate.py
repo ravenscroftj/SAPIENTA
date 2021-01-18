@@ -5,19 +5,16 @@ Take a known, split paper and annotate it using Sapienta remotely
 '''
 import sys
 import os
-import pycurl
 import codecs
 import subprocess
 import tempfile
 import logging
+import dotenv
 
-from urllib import urlencode
-from progressbar import ProgressBar
+dotenv.load_dotenv()
+
+from urllib.parse import urlencode
 from xml.dom import minidom
-from curlutil import CURLUploader
-from sapienta import app
-
-config = app.config
 
 try:
     from collections import Counter
@@ -48,7 +45,7 @@ class BaseAnnotator(object):
 
             sid = s.getAttribute("sid")
 
-            if labels.has_key(sid):
+            if sid in labels:
 
                 label = labels[sid]
 
@@ -134,18 +131,19 @@ class BaseAnnotator(object):
 #MODEL_PATH = str(os.path.join(config['MODELS_DIR'], "a.model"))
 class LocalPythonAnnotator(BaseAnnotator):
 
-    def __init__(self,config=config,logger=None):
+    def __init__(self, logger=None):
         from sapienta.ml.annotate import CRFAnnotator
         from tempfile import mkdtemp
 
+        self.probs = False
         cacheDir = mkdtemp()
-        modelFile = config['SAPIENTA_MODEL_FILE']
-        ngramsFile = config['SAPIENTA_NGRAMS_FILE']
+        modelFile = os.environ['SAPIENTA_MODEL_FILE']
+        ngramsFile = os.environ['SAPIENTA_NGRAMS_FILE']
 
         features = ['ngrams', 'verbs', 'verbclass','verbpos', 'passive','triples','relations','positions' ]
 
 
-        self.annotator = CRFAnnotator(modelFile, ngramsFile, cacheDir, features, config, logger)
+        self.annotator = CRFAnnotator(modelFile, ngramsFile, cacheDir, features, logger=logger)
 
     #------------------------------------------------------------------------- 
     def annotate(self, filename, outfilename):
@@ -167,8 +165,8 @@ class LocalPerlAnnotator(BaseAnnotator):
 
     def __init__(self):
 
-        self.perldir = config['SAPIENTA_PERL_DIR']
-        self.resultdir = config['SAPIENTA_RESULT_DIR']
+        self.perldir = os.environ['SAPIENTA_PERL_DIR']
+        self.resultdir = os.environ['SAPIENTA_RESULT_DIR']
 
 
     def annotate(self,infile,outfile):
@@ -213,47 +211,47 @@ class LocalPerlAnnotator(BaseAnnotator):
                 
 
 
-#------------------------------------------------------------------            
+# #------------------------------------------------------------------            
 
-SAPIENTA_URL="http://www.ebi.ac.uk/Rebholz-srv/sapienta/CoreSCWeb/submitRPC"
+# SAPIENTA_URL="http://www.ebi.ac.uk/Rebholz-srv/sapienta/CoreSCWeb/submitRPC"
 
-class RemoteAnnotator(BaseAnnotator, CURLUploader):
-    """Class that submits a remote annotation job to sapienta servers and saves
-    results
-    """
+# class RemoteAnnotator(BaseAnnotator, CURLUploader):
+#     """Class that submits a remote annotation job to sapienta servers and saves
+#     results
+#     """
 
-    def __init__(self):
-        """"""
+#     def __init__(self):
+#         """"""
 
-    def annotate(self, infile, outfile):
-        """Do the actual annotation work"""
+#     def annotate(self, infile, outfile):
+#         """Do the actual annotation work"""
 
-        BaseAnnotator.annotate(self, infile, outfile)
+#         BaseAnnotator.annotate(self, infile, outfile)
 
-        #parse doc to see if annotations already present
-        if len(self.doc.getElementsByTagName("CoreSc1")) < 1:
+#         #parse doc to see if annotations already present
+#         if len(self.doc.getElementsByTagName("CoreSc1")) < 1:
 
-            pdata = [('paper', (pycurl.FORM_FILE, infile) )]
+#             pdata = [('paper', (pycurl.FORM_FILE, infile) )]
 
-            c = pycurl.Curl()
-            c.setopt(pycurl.URL, SAPIENTA_URL)
-            c.setopt(pycurl.POST,1)
-            c.setopt(pycurl.HTTPPOST, pdata)
+#             c = pycurl.Curl()
+#             c.setopt(pycurl.URL, SAPIENTA_URL)
+#             c.setopt(pycurl.POST,1)
+#             c.setopt(pycurl.HTTPPOST, pdata)
 
-            logging.info("Uploading %s to annotation server", infile)
+#             logging.info("Uploading %s to annotation server", infile)
 
-            self.perform(c)
-            try:
-                tmpnam, sents = self.result.split(":")
-            except Exception as e:
-                raise SapientaException("Empty response from SAPIENTA")
+#             self.perform(c)
+#             try:
+#                 tmpnam, sents = self.result.split(":")
+#             except Exception as e:
+#                 raise SapientaException("Empty response from SAPIENTA")
 
-            labels = sents.split(">")
+#             labels = sents.split(">")
 
-            self._annotateXML( labels )
+#             self._annotateXML( labels )
 
-        with codecs.open(outfile,'w', encoding='utf-8') as f:
-            self.doc.writexml(f)
+#         with codecs.open(outfile,'w', encoding='utf-8') as f:
+#             self.doc.writexml(f)
 
 
 
@@ -262,9 +260,9 @@ class RemoteAnnotator(BaseAnnotator, CURLUploader):
 
 #Set annotator to remote annotator for now
 
-if config.has_key('SAPIENTA_ANNOTATE_METHOD'):
+if 'SAPIENTA_ANNOTATE_METHOD' in os.environ:
     
-    if config['SAPIENTA_ANNOTATE_METHOD'] == 'PERL':
+    if os.environ['SAPIENTA_ANNOTATE_METHOD'] == 'PERL':
         Annotator = LocalPerlAnnotator
     else:
     #elif config['SAPIENTA_ANNOTATE_METHOD'] == 'PYTHON':
