@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:latest
+FROM python:3.6 as build
 
 RUN apt-get update -y && apt-get install build-essential automake autoconf libtool -y
 
@@ -10,12 +10,21 @@ ADD crfsuite /build/crfsuite
 
 RUN cd /build/crfsuite && ./autogen.sh && ./configure && make && make install
 
+RUN cp /build/crfsuite/swig/crfsuite.cpp /build/crfsuite/swig/python && cd /build/crfsuite/swig/python  && \
+  pip3 wheel .
+
+
+FROM continuumio/miniconda3:latest
+
 WORKDIR /app
 
 ADD environment.yml /app/environment.yml
 RUN conda env update -n base -f environment.yml
 
-RUN cp /build/crfsuite/swig/crfsuite.cpp /build/crfsuite/swig/python && cd  /build/crfsuite/swig/python  && python setup.py install
+COPY --from=build /build/crfsuite/swig/python/*.whl /build/
+
+RUN pip install /build/crfsuite*.whl && rm -rf /build/
+
 
 ADD ./sapienta /app/sapienta
 ADD ./setup.py /app/setup.py
