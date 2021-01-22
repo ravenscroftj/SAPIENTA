@@ -21,6 +21,7 @@ WORKDIR /app
 ADD environment.yml /app/environment.yml
 RUN conda env update -n base -f environment.yml
 
+COPY --from=build /usr/local/lib/* /usr/local/lib/
 COPY --from=build /build/crfsuite/swig/python/*.whl /build/
 
 RUN pip install /build/crfsuite*.whl && rm -rf /build/
