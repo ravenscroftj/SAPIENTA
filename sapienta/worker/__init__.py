@@ -17,7 +17,7 @@ from dramatiq.brokers.redis import RedisBroker
 from sapienta import get_minio_client
 
 
-@dramatiq.actor(store_results=True)
+@dramatiq.actor(store_results=True, max_retries=3)
 def convert(pdf_key: str) -> str:
     """Convert a PDF to an XML"""
 
@@ -48,7 +48,7 @@ def convert(pdf_key: str) -> str:
 
     return out_key
 
-@dramatiq.actor(store_results=True)
+@dramatiq.actor(store_results=True, max_retries=3)
 def split(xml_key: str) -> str:
     """Split an xml into sentences"""
 
