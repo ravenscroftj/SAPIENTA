@@ -4,9 +4,10 @@ channels:
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
+  - aiofiles=0.6.0=pyhd8ed1ab_0
   - autopep8=1.5.4=py_0
-  - ca-certificates=2020.12.8=h06a4308_0
-  - certifi=2020.12.5=py36h06a4308_0
+  - ca-certificates=2020.12.5=ha878542_0
+  - certifi=2020.12.5=py36h5fab9bb_1
   - click=7.1.2=py_0
   - dramatiq=1.10.0=pyhd8ed1ab_0
   - flake8=3.8.4=py_0
@@ -43,6 +44,7 @@ dependencies:
     - bidict==0.21.2
     - chardet==4.0.0
     - cloudpickle==1.6.0
+    - crfsuite==0.12
     - dataclasses==0.8
     - fastapi==0.63.0
     - flask-socketio==5.0.1
