@@ -28,8 +28,8 @@ services:
         ports:
             - 9004:9004
 
-    sapienta_worker:
-        image: sapienta
+    worker:
+        image: ravenscroftj/sapienta:latest
         environment: 
             - SAPIENTA_CANDC_SOAP_LOCATION=http://candc:9004/
             - REDIS_HOST=redis
@@ -42,8 +42,8 @@ services:
 
         command: dramatiq --threads 1 sapienta.worker
         
-    sapienta_web:
-        image: sapienta
+    web:
+        image: ravenscroftj/sapienta:latest
         environment:
             - REDIS_HOST=redis
             - MINIO_HOST=minio:9000
