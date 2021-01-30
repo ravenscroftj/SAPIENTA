@@ -15,7 +15,7 @@ from multiprocessing import Pool,Queue,current_process
 import sapienta
 
 from optparse import OptionParser
-from sapienta.tools.converter import PDFXConverter
+from sapienta.tools.converter import PDFXConverter, GrobidConverter
 from sapienta.tools.annotate import Annotator
 
 from dotenv import load_dotenv
@@ -42,7 +42,13 @@ def init_worker(q, rq=None):
     logger = logging.getLogger("pdfxconv:worker%d" % i )
 
     logger.info("Initializing PDF splitter")
-    my_pdfx = PDFXConverter()
+    
+    converter = os.environ.get("PDF_CONVERTER", "pdfx")
+
+    if converter == "pdfx":
+        my_pdfx = PDFXConverter()
+    else:
+        my_pdfx = GrobidConverter()
 
     logger.info("Initialising sentence splitter")
     my_splitter = Splitter()
