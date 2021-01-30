@@ -14,6 +14,11 @@ services:
         ports:
             - 9000:9000
 
+    grobid:
+        image: lfoppiano/grobid:0.6.1
+        ports:
+            - 8070:8070
+
     redis:
         image: redis:6.0.9
         volumes:
@@ -41,6 +46,8 @@ services:
             - MINIO_SECRET_KEY
             - SAPIENTA_ENDPOINT=http://web:8000
             - SAPIENTA_WORKER_PASSWORD
+            - GROBID_HOST=http://grobid:8070
+            - PDF_CONVERTER=grobid
 
         command: dramatiq --threads 1 sapienta.worker
         
