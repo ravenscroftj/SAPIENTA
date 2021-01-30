@@ -3,7 +3,7 @@ import tempfile
 import os
 import requests
 
-from sapienta.tools.converter import PDFXConverter
+from sapienta.tools.converter import PDFXConverter, GrobidConverter
 from sapienta.tools.annotate import Annotator
 from sapienta.tools.sssplit import SSSplit as Splitter
 
@@ -40,7 +40,12 @@ def convert(pdf_key: str) -> str:
 
         logger = dramatiq.get_logger(__name__)
 
-        conv = PDFXConverter()
+        converter = os.environ.get("PDF_CONVERTER", "pdfx")
+
+        if converter == "pdfx":
+            conv = PDFXConverter()
+        else:
+            conv = GrobidConverter()
 
         mc = get_minio_client()
 

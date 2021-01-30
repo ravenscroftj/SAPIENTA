@@ -28,7 +28,8 @@ class ConnectionManager:
 
     async def broadcast(self, job_id: str, message: str):
         """Broadcast a status update for subscriptions to a particular job"""
-        for connection in self.subscriptions[job_id]:
+
+        for connection in self.subscriptions.get(job_id,[]):
             await connection.send_text(message)
 
 
