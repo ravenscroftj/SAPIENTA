@@ -10,6 +10,8 @@ jobs:
     # You can change this if you want to build on an other image
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout submodules
+        uses: textbook/git-checkout-submodule-action@master
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
