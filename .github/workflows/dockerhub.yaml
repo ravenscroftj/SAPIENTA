@@ -22,7 +22,7 @@ jobs:
         with:
           context: ./
         # Change filename here if Dockerfile is other than Dockerfile
-          file: ./Dockerfile
+          file: ./docker/Dockerfile.sapienta
           push: true
         # Change this to the Dockerhub repo you want to push your image to
           tags: ravenscroftj/sapienta:latest
