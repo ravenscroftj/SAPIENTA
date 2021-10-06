@@ -1,4 +1,4 @@
-#SAPIENTA for Python
+# SAPIENTA for Python
 
 This package contains all of the utilities and tools necessary to run a
 SAPIENTA annotation server in Python. It currently relies upon the Perl version
