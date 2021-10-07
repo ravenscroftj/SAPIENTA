@@ -13,6 +13,16 @@ RUN cd /build/crfsuite && ./autogen.sh && ./configure && make && make install
 RUN cp /build/crfsuite/swig/crfsuite.cpp /build/crfsuite/swig/python && cd /build/crfsuite/swig/python  && \
   pip3 wheel .
 
+FROM node:lts-alpine as ui_build
+
+RUN npm install yarn
+
+ADD ui /build
+
+WORKDIR /build
+
+RUN yarn install && yarn build
+
 
 FROM continuumio/miniconda3:latest
 
@@ -38,6 +48,10 @@ ADD https://papro.org.uk/downloads/sapienta/models/18-01-2021/all_papers.model /
 ADD https://papro.org.uk/downloads/sapienta/models/18-01-2021/ngrams.pickle /models/ngrams.pickle
 
 ADD static/ /app/static
+
+COPY --from=ui_build /build/build/index.html /app/static/index.html
+COPY --from=ui_build /build/build/static/js /app/static/js
+COPY --from=ui_build /build/build/static/css /app/static/css
 
 ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 ENV SAPIENTA_STOPWORDS_LIST=/models/written.num.o5

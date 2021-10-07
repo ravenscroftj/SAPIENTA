@@ -14,3 +14,6 @@ miniodata/
 all_papers.model
 ngrams.pickle
 written.num.o5
+
+static/ui/
+static/index.html
