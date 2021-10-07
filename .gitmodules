@@ -4,6 +4,6 @@
 [submodule "liblbfgs"]
 	path = liblbfgs
 	url = https://github.com/chokkan/liblbfgs.git
-[submodule "static/ui"]
-	path = static/ui
+[submodule "ui"]
+	path = ui
 	url = https://github.com/ravenscroftj/sapienta-ui.git
