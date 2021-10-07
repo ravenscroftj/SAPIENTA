@@ -1,4 +1,4 @@
-FROM python:3.7 as build
+FROM python:3.7.9 as build
 
 RUN apt-get update -y && apt-get install build-essential automake autoconf libtool -y
 
@@ -24,7 +24,7 @@ WORKDIR /build
 RUN yarn install && yarn build
 
 
-FROM continuumio/miniconda3:latest
+FROM continuumio/miniconda3:4.8.3
 
 WORKDIR /app
 
