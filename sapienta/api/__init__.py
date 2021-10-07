@@ -4,6 +4,7 @@ import minio
 import json
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Response, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from sapienta import get_minio_client
 from sapienta.worker import convert, split, annotate
 from pydantic import BaseModel
@@ -16,6 +17,15 @@ from sapienta.api.ws import manager
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"))
+
+origins = [
+    "http://sapienta.papro.org.uk",
+    "https://sapienta.papro.org.uk",
+    "http://localhost:8000",
+    "http://localhost:3000",
+]
+
+app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
 
 
 @app.websocket("/ws")
@@ -60,8 +70,14 @@ async def job_progress_update(job_id, challenge: str, progress: JobProgressUpdat
 
 @app.get("/")
 def get_index_html():
+    with open(os.environ.get("SAPIENTA_INDEX_FILE", "static/readme.html")) as f:
+        return HTMLResponse(f.read())
+
+@app.get("/ui")
+def get_index_html():
     with open(os.environ.get("SAPIENTA_INDEX_FILE", "static/index.html")) as f:
         return HTMLResponse(f.read())
+
 
 
 class JobResponse(BaseModel):
