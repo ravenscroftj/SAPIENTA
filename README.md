@@ -1,64 +1,34 @@
-# SAPIENTA for Python
+# SAPIENTA
 
-This package contains all of the utilities and tools necessary to run a
-SAPIENTA annotation server in Python. It currently relies upon the Perl version
-of SAPIENTA but it is intended that a Python version of the annotation system
-will be implemented imminently.
+This repository is the home of the code behind the [SAPIENTA Project]().
 
-## Requirements
+To use SAPIENTA we recommend visiting our flagship instance https://sapienta.dcs.aber.ac.uk/ which is kindly hosted by [Aberystwyth University Deparment of Computer Science](https://www.aber.ac.uk/en/cs/). For simple use cases you should find the [Web UI](https://sapienta.dcs.aber.ac.uk/ui) sufficient.
 
-This package runs in Python 2.7 and requires the following Python libraries:
+## Local Installation For Large Batch Annotation.
 
-    *  Flask (version 0.9 or newer)
-    *  pycurl (version 7.19 or newer)
-    *  text-sentence (version 0.14 or newer)
+For non-developers who are looking to enrich large batches of scientific papers and in cases where our [freely available server]() is unavailable or insufficient, we provide a [docker-compose](https://docs.docker.com/compose/) configuration.
 
-These packages and their dependencies can be automatically installed as part of
-the installation process illustrated below.
+[Full instructions for configuring SAPIENTA in docker are available here](docs/docker-compose.md).
 
+## Local Installation for Developers and Tinkerers
 
-## Installation
+If you plan to make changes to SAPIENTA's models or code then you will need to do a full installation of the system and the docker configuration is likely to be insufficient for your needs. 
 
-Please Read the [INSTALL](install.md) file for notes on how to compile and install SAPIENTA for your system.
+[A guide to installing SAPIENTA ready for local development is available here](docs/full-install.md)
 
+## Citing SAPIENTA
 
-## Configuration
+If you use our webservice or our software as part of an academic work then please cite the following paper:
 
-SAPIENTA can be used as a web server, annotation worker or just as a
-commandline tool for annotating papers. Regardless of how you intend to use it,
-you need to set a few values in the configuration file. 
-
-By default, SAPIENTA will look for a file named `sapienta.cfg` in the current working directory, then the user config directory (`~/.config/sapienta.cfg`) and finally a system-wide configuration file (`/etc/sapienta.cfg`). It will stop looking and use the first file it finds conforming to this pattern.
-
-You should use the sample config file for reference when setting up your SAPIENTA installation:
-
-    ~/SAPIENTA $ cp sapienta.cfg.sample ~/.config/
-    $ [vim or gedit or kate] ~/.config/sapienta.cfg
-    
-For a more in depth look at configuring SAPIENTA. Read the [configuration](https://github.com/ravenscroftj/SAPIENTA/wiki/Configuration) guide or the [server configuration](https://github.com/ravenscroftj/SAPIENTA/wiki/ServerConfiguration) guide.
-
-## Usage
-
-
-### pdfxconv - commandline paper annotation
-The most common usage for SAPIENTA is expected to be for commandline processing
-of papers. Once you've installed SAPIENTA, you should have access to the
-commandline application `pdfxconv`. This is a 'swiss-army-knife' program which
-provides pdf conversion, sentence splitting and annotation of papers. It also
-supports batch processing. Depending on your configuration, `pdfxconv` can be
-used as a thin client that offloads work to a remote SAPIENTA instance or make
-use of local processing.
-
-Typical usage of pdfxconv to convert a PDF to an annotated PubMed DTD paper
-might look like the following:
-
-    $ pdfxconv -a myarticle.pdf
-
-You can also batch process a set of files:
-
-    $ pdfxconv -a *.pdf *.xml
-
-### Web server and computation node
-
-You can read about how to use SAPIENTA as a web service [here](https://github.com/ravenscroftj/SAPIENTA/wiki/ServerConfiguration)
-
+```bibtex
+@article{liakata2012automatic,
+        title={Automatic recognition of conceptualization zones in scientific articles and two life science applications},
+        author={Liakata, Maria and Saha, Shyamasree and Dobnik, Simon and Batchelor, Colin and Rebholz-Schuhmann, Dietrich},
+        journal={Bioinformatics},
+        volume={28},
+        number={7},
+        pages={991--1000},
+        year={2012},
+        publisher={Oxford University Press}
+}       
+```           
