@@ -56,3 +56,5 @@ ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 ENV SAPIENTA_STOPWORDS_LIST=/models/written.num.o5
 ENV SAPIENTA_MODEL_FILE=/models/all_papers.model
 ENV SAPIENTA_NGRAMS_FILE=/models/ngrams.pickle
+
+ADD ./docker/scripts/launcher.sh /app/launcher.sh
