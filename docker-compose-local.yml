@@ -1,0 +1,35 @@
+version: "2.0"
+services: 
+    grobid:
+        image: lfoppiano/grobid:0.6.1
+        ports:
+            - 8070:8070
+
+    candc:
+        image: ravenscroftj/candc_coresc:latest
+        ports:
+            - 9004:9004
+
+    sapienta:
+        image: ravenscroftj/sapienta:latest
+        environment: 
+            - SAPIENTA_CANDC_SOAP_LOCATION=http://candc:9004/
+            - REDIS_HOST=redis
+            - MINIO_HOST=minio:9000
+            - MINIO_USE_SSL=0
+            - REDIS_PASSWORD
+            - MINIO_BUCKET
+            - MINIO_ACCESS_KEY
+            - MINIO_SECRET_KEY
+            - SAPIENTA_ENDPOINT=http://web:8000
+            - SAPIENTA_WORKER_PASSWORD
+            - GROBID_HOST=http://grobid:8070
+            - PDF_CONVERTER=grobid
+
+        # command: sh /app/launcher.sh
+        entrypoint: /app/launcher.sh
+        volumes:
+          - ./papers:/app/papers
+        links:
+          - grobid
+          - candc
